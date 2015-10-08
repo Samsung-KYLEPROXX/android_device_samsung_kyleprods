@@ -2,7 +2,7 @@
 
 ### Other source:
 * Kernel: https://github.com/SandPox/android_kernel_samsung_kyleproxx
-* Vendor: https://github.com/SandPox/android_vendor_samsung_kyleprods
+* Vendor: https://github.com/SandPox/android_vendor_samsung_kyleproxx
 
 ### Patch
 * Remember to overwrite CM11 source with file in /patch before build.
