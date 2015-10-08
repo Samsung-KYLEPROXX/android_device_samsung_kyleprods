@@ -1,0 +1,1 @@
+# Cyanogenmod 11 patch for GT-S7582 (kyleprods), by Zim555
