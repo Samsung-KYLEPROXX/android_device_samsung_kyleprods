@@ -179,7 +179,8 @@ TARGET_SPECIFIC_HEADER_PATH := device/samsung/kyleprods/include
 TARGET_USES_LOGD := false
 
 # Legends said jemalloc causes a lot of random crash on free()
-# but when running on this device it's terrible slow and causes slow app install; "Optimizing app"; "Android is upgrading"
+# but when dlmalloc running on this device it's terrible slow and causes
+# slow app install; "Optimizing app"; "Android is upgrading"
 # on boot. Feel free to try it
 MALLOC_IMPL := jemalloc
 
