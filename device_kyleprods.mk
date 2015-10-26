@@ -48,7 +48,11 @@ PRODUCT_PACKAGES += \
     	make_ext4fs \
     	e2fsck \
 	setup_fs
-		
+
+#SIM-Switcher
+PRODUCT_PACKAGES += \
+    SIMSwitcher		
+
 # Usb accessory
 PRODUCT_PACKAGES += \
 	com.android.future.usb.accessory
