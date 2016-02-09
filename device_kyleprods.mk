@@ -40,6 +40,12 @@ PRODUCT_PACKAGES += \
     e2fsck \
     setup_fs
 
+# CyanogenMod has removed CMAccount but not
+# fix the SetupWizard to working without it
+# http://review.cyanogenmod.org/#/c/131177/
+PRODUCT_PACKAGES += \
+    CMAccount
+
 # USB accessory
 PRODUCT_PACKAGES += \
     com.android.future.usb.accessory
