@@ -807,3 +807,115 @@ diff -ur a/system/core/libnetutils/ifc_utils.c b/system/core/libnetutils/ifc_uti
 +
 +    return ret;
 +}
+diff -ur a/packages/apps/Dialer/src/com/android/dialer/DialtactsActivity.java b/packages/apps/Dialer/src/com/android/dialer/DialtactsActivity.java
+--- a/packages/apps/Dialer/src/com/android/dialer/DialtactsActivity.java	2016-02-21 08:12:12.860771643 +0000
++++ b/packages/apps/Dialer/src/com/android/dialer/DialtactsActivity.java	2016-02-21 08:14:24.000000000 +0000
+@@ -175,6 +175,13 @@
+      */
+     private Animation mSlideOut;
+ 
++    AnimationListenerAdapter mSlideInListener = new AnimationListenerAdapter() {
++        @Override
++        public void onAnimationEnd(Animation animation) {
++            maybeEnterSearchUi();
++        }
++    };
++
+     /**
+      * Listener for after slide out animation completes on dialer fragment.
+      */
+@@ -308,7 +315,7 @@
+                 final boolean sameSearchMode = (mIsDialpadShown && mInDialpadSearch) ||
+                         (!mIsDialpadShown && mInRegularSearch);
+                 if (!sameSearchMode) {
+-                    enterSearchUi(mIsDialpadShown, mSearchQuery);
++                    enterSearchUi(mIsDialpadShown, mSearchQuery, true /* animate */);
+                 }
+             }
+ 
+@@ -333,7 +340,8 @@
+         public void onClick(View v) {
+             if (!isInSearchUi()) {
+                 mActionBarController.onSearchBoxTapped();
+-                enterSearchUi(false /* smartDialSearch */, mSearchView.getText().toString());
++                enterSearchUi(false /* smartDialSearch */, mSearchView.getText().toString(),
++                        true /* animate */);
+             }
+         }
+     };
+@@ -444,6 +452,8 @@
+         mSlideIn.setInterpolator(AnimUtils.EASE_IN);
+         mSlideOut.setInterpolator(AnimUtils.EASE_OUT);
+ 
++        mSlideIn.setAnimationListener(mSlideInListener);
++
+         mSlideOut.setAnimationListener(mSlideOutListener);
+ 
+         mParentLayout = (FrameLayout) findViewById(R.id.dialtacts_mainlayout);
+@@ -751,12 +765,11 @@
+         } else {
+             mFloatingActionButtonController.setVisible(false);
+             onFloatingActionButtonHidden();
++            maybeEnterSearchUi();
+         }
+         mActionBarController.onDialpadUp();
+ 
+-        if (!isInSearchUi()) {
+-            enterSearchUi(true /* isSmartDial */, mSearchQuery);
+-        }
++        mListsFragment.getView().animate().alpha(0).withLayer();
+ 
+         mDialpadFragment.enableSmartCall(true);
+     }
+@@ -983,7 +993,7 @@
+     /**
+      * Shows the search fragment
+      */
+-    private void enterSearchUi(boolean smartDialSearch, String query) {
++    private void enterSearchUi(boolean smartDialSearch, String query, boolean animate) {
+         if (mStateSaved || getFragmentManager().isDestroyed()) {
+             // Weird race condition where fragment is doing work after the activity is destroyed
+             // due to talkback being on (b/10209937). Just return since we can't do any
+@@ -1012,7 +1022,11 @@
+         mInRegularSearch = !smartDialSearch;
+ 
+         SearchFragment fragment = (SearchFragment) getFragmentManager().findFragmentByTag(tag);
+-        transaction.setCustomAnimations(android.R.animator.fade_in, 0);
++        if (animate) {
++            transaction.setCustomAnimations(android.R.animator.fade_in, 0);
++        } else {
++            transaction.setTransition(FragmentTransaction.TRANSIT_NONE);
++        }
+         if (fragment == null) {
+             if (smartDialSearch) {
+                 fragment = new SmartDialSearchFragment();
+@@ -1026,10 +1040,14 @@
+         // DialtactsActivity will provide the options menu
+         fragment.setHasOptionsMenu(false);
+         fragment.setShowEmptyListForNullQuery(true);
+-        fragment.setQueryString(query, false /* delaySelection */);
++        if (!smartDialSearch) {
++            fragment.setQueryString(query, false /* delaySelection */);
++        }
+         transaction.commit();
+ 
+-        mListsFragment.getView().animate().alpha(0).withLayer();
++        if (animate) {
++            mListsFragment.getView().animate().alpha(0).withLayer();
++        }
+         mListsFragment.setUserVisibleHint(false);
+     }
+ 
+@@ -1087,6 +1105,12 @@
+         }
+     }
+ 
++    private void maybeEnterSearchUi() {
++        if (!isInSearchUi()) {
++            enterSearchUi(true /* isSmartDial */, mSearchQuery, false);
++        }
++    }
++
+     /**
+      * @return True if the search UI was exited, false otherwise
+      */
