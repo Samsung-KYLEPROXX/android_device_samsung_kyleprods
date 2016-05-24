@@ -51,10 +51,7 @@ service ueventd /sbin/ueventd
 service console /system/bin/sh
     console
 
-service playlpm /system/bin/playlpm
-    user root
-
-service lpmkey /system/bin/lpmkey
+service lpm /system/bin/lpm
     user root
 
 service adbd /sbin/adbd
