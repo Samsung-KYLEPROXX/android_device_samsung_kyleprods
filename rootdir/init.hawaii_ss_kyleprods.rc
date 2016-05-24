@@ -631,11 +631,7 @@ service sdcard /system/bin/sdcard -u 1023 -g 1023 -l /data/media /mnt/shell/emul
         class main
         oneshot
 
-    service playlpm /system/bin/playlpm
-        class sec-charger
-        critical
-
-    service lpmkey /system/bin/lpmkey
+    service lpm /system/bin/lpm
         class sec-charger
         critical
 
