@@ -1383,3 +1383,33 @@ diff -ur a/packages/services/Telephony/src/com/android/phone/CallFeaturesSetting
          activity.finish();
      }
  
+diff -ur a/external/tinyalsa/include/tinyalsa/asoundlib.h b/external/tinyalsa/include/tinyalsa/asoundlib.h
+--- a/external/tinyalsa/include/tinyalsa/asoundlib.h	2016-05-25 10:17:32.620000000 +0000
++++ b/external/tinyalsa/include/tinyalsa/asoundlib.h	2016-05-25 10:17:43.408000000 +0000
+@@ -204,6 +204,7 @@
+ 
+ /* Start and stop a PCM channel that doesn't transfer data */
+ int pcm_start(struct pcm *pcm);
++int pcm_drain(struct pcm *pcm);
+ int pcm_stop(struct pcm *pcm);
+ 
+ /* ioctl function for PCM driver */
+diff -ur a/external/tinyalsa/pcm.c b/external/tinyalsa/pcm.c
+--- a/external/tinyalsa/pcm.c	2016-05-25 10:17:32.620000000 +0000
++++ b/external/tinyalsa/pcm.c	2016-05-25 10:17:43.412000000 +0000
+@@ -788,6 +788,14 @@
+     return 0;
+ }
+ 
++int pcm_drain(struct pcm *pcm)
++{
++    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DRAIN) < 0)
++        return oops(pcm, errno, "drain failed");
++
++    return 0;
++}
++
+ int pcm_stop(struct pcm *pcm)
+ {
+     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DROP) < 0)
+
