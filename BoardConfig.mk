@@ -34,7 +34,7 @@ else
     TARGET_KERNEL_CONFIG                    := bcm21664_hawaii_ss_kyleprods_rev00_cyanogenmod_defconfig
 endif
 TARGET_KERNEL_SOURCE                        := kernel/samsung/kyleproxx
-TARGET_KERNEL_CUSTOM_TOOLCHAIN              := arm-eabi-4.6
+TARGET_KERNEL_CUSTOM_TOOLCHAIN              := arm-eabi-4.7
 
 # Partition size
 BOARD_BOOTIMAGE_PARTITION_SIZE              := 8388608
