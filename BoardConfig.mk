@@ -87,12 +87,15 @@ TARGET_USES_CPU_BOOST_HINT                  := true
 TARGET_SCREEN_HEIGHT                        := 800
 TARGET_SCREEN_WIDTH                         := 480
 
+#Clang-Build
+USE_CLANG_PLATFORM_BUILD                    := true
+
 # Hardware rendering
 USE_OPENGL_RENDERER                         := true
 BOARD_USE_MHEAP_SCREENSHOT                  := true
 BOARD_EGL_WORKAROUND_BUG_10194508           := true
 TARGET_USES_ION                             := true
-HWUI_COMPILE_FOR_PERF                       := true
+#HWUI_COMPILE_FOR_PERF                       := true
 COMMON_GLOBAL_CFLAGS                        += -DNEEDS_VECTORIMPL_SYMBOLS -DHAWAII_HWC -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL
 TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK       := true
 TARGET_FORCE_HWC_FOR_VIRTUAL_DISPLAYS       := true
