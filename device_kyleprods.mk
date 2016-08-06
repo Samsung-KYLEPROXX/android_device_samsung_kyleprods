@@ -139,6 +139,16 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Dex2Oat multi-thread
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sys.fw.dex2oat_thread_count=2
+    
+# Performance,Memory & UI tweaks
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.min.fling_velocity=8000
+    ro.min_pointer_dur=8
+    windowsmgr.max_events_per_sec=150
+    debug.performance.tuning=1
+    ro.sys.fw.bg_apps_limit=10
+    ro.config.max_starting_bg=6
+        
 
 # Use Awesomeplayer
 PRODUCT_PROPERTY_OVERRIDES += \
