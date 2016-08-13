@@ -1,0 +1,37 @@
+--- a/frameworks/base/services/core/java/com/android/server/am/ProcessList.java
++++ b/frameworks/base/services/core/java/com/android/server/am/ProcessList.java
+@@ -198,10 +198,10 @@
+             BACKUP_APP_ADJ, CACHED_APP_MIN_ADJ, CACHED_APP_MAX_ADJ
+     };
+ 
+-    // These are the low-end OOM level limits for 32bit 1 GB RAM
++    // These are the low-end OOM level limits for 32bit 768 MB RAM
+     private final int[] mOomMinFreeLow32Bit = new int[] {
+-            12288, 18432, 24576,
+-            36864, 43008, 49152
++            17920, 20480, 25600,
++            38400, 43008, 49152
+     };
+     // These are the high-end OOM level limits for 32bit 1 GB RAM
+     private final int[] mOomMinFreeHigh32Bit = new int[] {
+@@ -291,11 +291,10 @@
+                 if (i == 4) high = (high*3)/2;
+                 else if (i == 5) high = (high*7)/4;
+             } else {
+-                Slog.i("XXXXXX", "choosing minFree values for 32 Bit");
++                Slog.i("XXXXXX", "Choosing minFree values for 32 Bit");
+                 low = mOomMinFreeLow32Bit[i];
+-                high = mOomMinFreeHigh32Bit[i];
+             }
+-            mOomMinFree[i] = (int)(low + ((high-low)*scale));
++            mOomMinFree[i] = (int)(low);
+         }
+ 
+         if (minfree_abs >= 0) {
+@@ -797,4 +796,4 @@
+         }
+         return true;
+     }
+-}
++}
+\ No newline at end of file

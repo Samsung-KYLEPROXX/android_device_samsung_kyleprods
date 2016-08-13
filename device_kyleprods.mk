@@ -149,10 +149,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Low-RAM configs
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sys.fw.bg_apps_limit=10 \
-    ro.config.max_starting_bg=8
+    ro.sys.fw.bg_apps_limit=12
           
-
 # Use Awesomeplayer
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.media.use-awesome=true
