@@ -149,7 +149,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Low-RAM configs
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.sys.fw.bg_apps_limit=12
+    ro.sys.fw.bg_apps_limit=12 \
+    config.disable_atlas=true
           
 # Use Awesomeplayer
 PRODUCT_PROPERTY_OVERRIDES += \
