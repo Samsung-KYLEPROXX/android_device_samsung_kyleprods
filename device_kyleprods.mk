@@ -67,6 +67,10 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     Snap
 
+# Moto-Doze(CMActions)
+PRODUCT_PACKAGES += \
+    CMActions
+
 # KSM
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.ksm.default=1
