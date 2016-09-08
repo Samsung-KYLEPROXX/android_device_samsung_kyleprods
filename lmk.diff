@@ -18,8 +18,8 @@
                  if (i == 4) high = (high*3)/2;
                  else if (i == 5) high = (high*7)/4;
              } else {
--                Slog.i("XXXXXX", "choosing minFree values for 32 Bit");
-+                Slog.i("XXXXXX", "Choosing minFree values for 32 Bit");
+-                Slog.i(TAG, "choosing minFree values for 32 Bit");
++                Slog.i(TAG, "Choosing minFree values for 32 Bit");
                  low = mOomMinFreeLow32Bit[i];
 -                high = mOomMinFreeHigh32Bit[i];
              }
