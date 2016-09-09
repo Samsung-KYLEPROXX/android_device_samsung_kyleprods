@@ -2201,3 +2201,40 @@ diff -ur a/frameworks/av/media/libstagefright/MediaBufferGroup.cpp b/frameworks/
  status_t MediaBufferGroup::acquire_buffer(
          MediaBuffer **out, bool nonBlocking) {
      Mutex::Autolock autoLock(mLock);
+--- a/frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java
++++ b/frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java
+@@ -255,6 +255,7 @@
+     // Timestamp of the last call to user activity.
+     private long mLastUserActivityTime;
+     private long mLastUserActivityTimeNoChangeLights;
++    private long mLastButtonActivityTime;
+ 
+     // Timestamp of last interactive power hint.
+     private long mLastInteractivePowerHintTime;
+@@ -1202,6 +1203,10 @@
+                     return true;
+                 }
+             } else {
++            	    if (eventTime > mLastButtonActivityTime && (event & PowerManager.USER_ACTIVITY_EVENT_BUTTON) != 0) {
++            	    	    mLastButtonActivityTime = eventTime;
++            	    	    mDirty |= DIRTY_USER_ACTIVITY;
++            	    	 }
+                 if (eventTime > mLastUserActivityTime) {
+                     mLastUserActivityTime = eventTime;
+                     mDirty |= DIRTY_USER_ACTIVITY;
+@@ -1735,7 +1740,7 @@
+                             mKeyboardLight.setBrightness(mKeyboardVisible ?
+                                     keyboardBrightness : 0);
+                             if (mButtonTimeout != 0
+-                                    && now > mLastUserActivityTime + mButtonTimeout) {
++                                    && now > mLastButtonActivityTime + mButtonTimeout) {
+                                 mButtonsLight.setBrightness(0);
+                             } else {
+                                 if (!mProximityPositive) {
+@@ -4085,4 +4090,4 @@
+         }
+         return false;
+     }
+-}
++}
+\ No newline at end of file     
