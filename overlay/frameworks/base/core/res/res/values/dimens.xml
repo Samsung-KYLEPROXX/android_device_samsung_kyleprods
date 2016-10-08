@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-/*
-** Copyright 2011, The CyanogenMod Project
+/* //device/apps/common/assets/res/any/dimens.xml
+**
+** Copyright 2006, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -16,16 +17,13 @@
 ** limitations under the License.
 */
 -->
-
-<!-- These resources are around just to allow their values to be customized
-     for different hardware and product builds. -->
 <resources>
-    <!-- Control whether status bar should distinguish HSPA data icon form UMTS data icon on devices -->
-    <bool name="config_hspa_data_distinguishable">true</bool>
 
-    <!-- Whether recents should use hardware layers for its taskviews. This flag can be enabled
-    for devices where the java drawing of round rects may be slow -->
-    <bool name="config_recents_use_hardware_layers">true</bool>
+    <!-- Height of the bottom navigation / system bar. -->
+    <dimen name="navigation_bar_height">38dp</dimen>
+    <!-- Height of the bottom navigation bar in portrait; often the same as @dimen/navigation_bar_height -->
+    <dimen name="navigation_bar_height_landscape">38dp</dimen>
+    <!-- Width of the navigation bar when it is placed vertically on the screen -->
+    <dimen name="navigation_bar_width">38dp</dimen>
 
 </resources>
-

@@ -36,7 +36,10 @@ ADDITIONAL_DEFAULT_PROPERTIES += \
 PRODUCT_PACKAGES += \
     make_ext4fs \
     e2fsck \
-    setup_fs
+    setup_fs \
+    mkfs.f2fs \
+    fsck.f2fs \
+    fibmap.f2fs
 
 # GPS/RIL
 PRODUCT_PACKAGES += \
@@ -57,6 +60,12 @@ PRODUCT_PACKAGES += \
     lights.hawaii \
     power.hawaii \
     libstagefrighthw
+
+# Media
+PRODUCT_PROPERTY_OVERRIDES += \
+    media.stagefright.codecremote=false \
+    media.stagefright.legacyencoder=true \
+    media.stagefright.less-secure=true
 
 # IPv6 tethering
 PRODUCT_PACKAGES += \
@@ -82,7 +91,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Wi-Fi
 PRODUCT_PACKAGES += \
     macloader \
-    dhcpcd.conf \
     hostapd \
     libnetcmdiface \
     wpa_supplicant \

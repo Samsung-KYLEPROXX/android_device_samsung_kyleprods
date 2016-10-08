@@ -34,7 +34,10 @@ else
     TARGET_KERNEL_CONFIG                    := bcm21664_hawaii_ss_kyleprods_rev00_cyanogenmod_defconfig
 endif
 TARGET_KERNEL_SOURCE                        := kernel/samsung/kyleproxx
-TARGET_KERNEL_CUSTOM_TOOLCHAIN              := arm-eabi-4.7
+
+# Kernel toolchain
+KERNEL_TOOLCHAIN                            := $(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.7/bin
+KERNEL_TOOLCHAIN_PREFIX                     := arm-eabi-
 
 # Extended filesystem support
 TARGET_KERNEL_HAVE_EXFAT                    := true
@@ -42,7 +45,9 @@ TARGET_KERNEL_HAVE_NTFS                     := true
 
 # Partition size
 BOARD_BOOTIMAGE_PARTITION_SIZE              := 8388608
-BOARD_RECOVERYIMAGE_PARTITION_SIZE          := 9191424
+# //Fake Values to workaround build
+BOARD_RECOVERYIMAGE_PARTITION_SIZE          := 10279424
+# //
 BOARD_SYSTEMIMAGE_PARTITION_SIZE            := 1200283648
 BOARD_SYSTEMIMAGE_JOURNAL_SIZE              := 0
 BOARD_USERDATAIMAGE_PARTITION_SIZE          := 2382364672
@@ -54,7 +59,7 @@ BOARD_FLASH_BLOCK_SIZE                      := 262144
 BOARD_HAVE_BLUETOOTH                        := true
 BOARD_HAVE_BLUETOOTH_BCM                    := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/samsung/kyleprods/bluetooth
-BOARD_BLUEDROID_VENDOR_CONF                 := device/samsung/kyleprods/bluetooth/libbt_vndcfg.txt
+BOARD_CUSTOM_BT_CONFIG                      := device/samsung/kyleprods/bluetooth/libbt_vndcfg.txt
 
 # Connectivity - Wi-Fi
 BOARD_HAVE_SAMSUNG_WIFI                     := true
@@ -88,12 +93,12 @@ TARGET_SCREEN_HEIGHT                        := 800
 TARGET_SCREEN_WIDTH                         := 480
 
 # Hardware rendering
-USE_OPENGL_RENDERER                         := true
-BOARD_USE_MHEAP_SCREENSHOT                  := true
+#USE_OPENGL_RENDERER                        := true
+#BOARD_USE_MHEAP_SCREENSHOT                 := true
 BOARD_EGL_WORKAROUND_BUG_10194508           := true
 TARGET_USES_ION                             := true
-HWUI_COMPILE_FOR_PERF                       := true
-COMMON_GLOBAL_CFLAGS                        += -DNEEDS_VECTORIMPL_SYMBOLS -DHAWAII_HWC -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL
+#HWUI_COMPILE_FOR_PERF                      := true
+BOARD_GLOBAL_CFLAGS                         += -DNEEDS_VECTORIMPL_SYMBOLS -DHAWAII_HWC -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL
 TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK       := true
 TARGET_FORCE_HWC_FOR_VIRTUAL_DISPLAYS       := true
 
@@ -117,7 +122,10 @@ BOARD_HAL_STATIC_LIBRARIES                  := libhealthd.hawaii
 
 # RIL
 BOARD_RIL_CLASS                             := ../../../device/samsung/kyleprods/ril/
-COMMON_GLOBAL_CFLAGS                        += -DDISABLE_ASHMEM_TRACKING
+BOARD_GLOBAL_CFLAGS                         += -DDISABLE_ASHMEM_TRACKING
+
+# Some of our vendor libs have text relocations
+TARGET_NEEDS_PLATFORM_TEXT_RELOCATIONS      := true
 
 # Recovery
 # Compile with BUILD_TWRP=true when build TWRP recovery
@@ -128,6 +136,7 @@ else
 endif
 TARGET_USE_CUSTOM_LUN_FILE_PATH             := /sys/class/android_usb/android0/f_mass_storage/lun/file
 TARGET_USERIMAGES_USE_EXT4                  := true
+TARGET_USERIMAGES_USE_F2FS                  := true
 TARGET_RECOVERY_PIXEL_FORMAT                := BGRA_8888
 BOARD_HAS_NO_MISC_PARTITION                 := true
 BOARD_RECOVERY_HANDLES_MOUNT                := true
@@ -143,6 +152,7 @@ TW_CUSTOM_BATTERY_PATH                      := /sys/class/power_supply/battery
 TW_BRIGHTNESS_PATH                          := /sys/class/backlight/panel/brightness
 RECOVERY_SDCARD_ON_DATA                     := true
 TW_NO_REBOOT_BOOTLOADER                     := true
+TW_INCLUDE_CRYPTO                           := true
 RECOVERY_GRAPHICS_USE_LINELENGTH            := true
 TW_INTERNAL_STORAGE_PATH                    := /data/media
 TW_INTERNAL_STORAGE_MOUNT_POINT             := sdcard
@@ -168,6 +178,7 @@ BOARD_HARDWARE_CLASS                        := hardware/samsung/cmhw/
 
 # GPS
 TARGET_SPECIFIC_HEADER_PATH                 := device/samsung/kyleprods/include
+
 
 # SELinux
 BOARD_SEPOLICY_DIRS += \

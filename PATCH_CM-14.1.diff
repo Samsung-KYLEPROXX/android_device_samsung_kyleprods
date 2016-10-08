@@ -1,0 +1,1710 @@
+--- a/external/icu/icu4c/source/common/ucnv.c
++++ b/external/icu/icu4c/source/common/ucnv.c
+@@ -2904,6 +2904,75 @@
+             return FALSE;
+     }
+ }
++U_CAPI void    U_EXPORT2 ucnv_setToUCallBack_48 (UConverter * converter,
++                            UConverterToUCallback newAction,
++                            const void* newContext,
++                            UConverterToUCallback *oldAction,
++                            const void** oldContext,
++                            UErrorCode * err) {
++  ucnv_setToUCallBack(converter, newAction, newContext,
++        oldAction, oldContext, err);
++}
++
++U_CAPI void  U_EXPORT2 ucnv_close_48 (UConverter * converter) {
++  ucnv_close (converter);
++}
++
++U_CAPI void  U_EXPORT2
++ucnv_setFromUCallBack_48 (UConverter * converter,
++                            UConverterFromUCallback newAction,
++                            const void* newContext,
++                            UConverterFromUCallback *oldAction,
++                            const void** oldContext,
++                            UErrorCode * err) {
++
++  ucnv_setFromUCallBack(converter, newAction, newContext, oldAction,
++        oldContext, err);
++}
++
++U_CAPI void U_EXPORT2
++ucnv_convertEx_48 (UConverter *targetCnv, UConverter *sourceCnv,
++               char **target, const char *targetLimit,
++               const char **source, const char *sourceLimit,
++               UChar *pivotStart, UChar **pivotSource,
++               UChar **pivotTarget, const UChar *pivotLimit,
++               UBool reset, UBool flush,
++               UErrorCode *pErrorCode) {
++  ucnv_convertEx(targetCnv, sourceCnv, target, targetLimit, source,
++        sourceLimit, pivotStart, pivotSource,
++        pivotTarget, pivotLimit, reset, flush,
++        pErrorCode);
++}
++
++U_CAPI UConverter* U_EXPORT2
++ucnv_open_48 (const char *name,
++                       UErrorCode * err) {
++  return ucnv_open(name, err);
++}
++
++U_STABLE void U_EXPORT2 UCNV_FROM_U_CALLBACK_STOP_48 (
++                  const void *context,
++                  UConverterFromUnicodeArgs *fromUArgs,
++                  const UChar* codeUnits,
++                  int32_t length,
++                  UChar32 codePoint,
++                  UConverterCallbackReason reason,
++                  UErrorCode * err) {
++  return UCNV_FROM_U_CALLBACK_STOP(context, fromUArgs, codeUnits,
++      length, codePoint, reason, err);
++}
++
++U_STABLE void U_EXPORT2 UCNV_TO_U_CALLBACK_STOP_48 (
++                  const void *context,
++                  UConverterToUnicodeArgs *toUArgs,
++                  const char* codeUnits,
++                  int32_t length,
++                  UConverterCallbackReason reason,
++                  UErrorCode * err) {
++  return UCNV_TO_U_CALLBACK_STOP(context, toUArgs, codeUnits, length,
++      reason, err);
++}
++
+ #endif
+ 
+ /*
+--- a/system/sepolicy/domain.te
++++ b/system/sepolicy/domain.te
+@@ -187,7 +187,7 @@
+ # init starts in kernel domain and switches to init domain via setcon in
+ # the init.rc, so the setenforce occurs while still in kernel. After
+ # switching domains, there is never any need to setenforce again by init.
+-neverallow * kernel:security setenforce;
++#neverallow * kernel:security setenforce;
+ neverallow { domain -kernel } kernel:security setcheckreqprot;
+ 
+ # No booleans in AOSP policy, so no need to ever set them.
+diff -ur a/frameworks/base/telephony/java/android/telephony/TelephonyManager.java b/frameworks/base/telephony/java/android/telephony/TelephonyManager.java
+--- a/frameworks/base/telephony/java/android/telephony/TelephonyManager.java
++++ b/frameworks/base/telephony/java/android/telephony/TelephonyManager.java
+@@ -3737,49 +3737,19 @@ public class TelephonyManager {
+      * @hide
+      */
+     public static void setTelephonyProperty(int phoneId, String property, String value) {
+-        String propVal = "";
+-        String p[] = null;
+-        String prop = SystemProperties.get(property);
+-
+-        if (value == null) {
+-            value = "";
+-        }
+-
+-        if (prop != null) {
+-            p = prop.split(",");
+-        }
+-
+         if (!SubscriptionManager.isValidPhoneId(phoneId)) {
+             Rlog.d(TAG, "setTelephonyProperty: invalid phoneId=" + phoneId +
+-                    " property=" + property + " value: " + value + " prop=" + prop);
++                    " property=" + property + " value: " + value);
+             return;
+         }
+ 
+-        for (int i = 0; i < phoneId; i++) {
+-            String str = "";
+-            if ((p != null) && (i < p.length)) {
+-                str = p[i];
+-            }
+-            propVal = propVal + str + ",";
+-        }
+-
+-        propVal = propVal + value;
+-        if (p != null) {
+-            for (int i = phoneId + 1; i < p.length; i++) {
+-                propVal = propVal + "," + p[i];
+-            }
+-        }
+-
+-        if (property.length() > SystemProperties.PROP_NAME_MAX
+-                || propVal.length() > SystemProperties.PROP_VALUE_MAX) {
+-            Rlog.d(TAG, "setTelephonyProperty: property to long phoneId=" + phoneId +
+-                    " property=" + property + " value: " + value + " propVal=" + propVal);
+-            return;
++        if (phoneId > 0) {
++           property += "_" + phoneId;
+         }
+ 
+         Rlog.d(TAG, "setTelephonyProperty: success phoneId=" + phoneId +
+-                " property=" + property + " value: " + value + " propVal=" + propVal);
+-        SystemProperties.set(property, propVal);
++                " property=" + property + " value: " + value);
++        SystemProperties.set(property, value);
+     }
+ 
+     /**
+@@ -3876,15 +3846,21 @@ public class TelephonyManager {
+      * @hide
+      */
+     public static String getTelephonyProperty(int phoneId, String property, String defaultVal) {
+-        String propVal = null;
+-        String prop = SystemProperties.get(property);
+-        if ((prop != null) && (prop.length() > 0)) {
+-            String values[] = prop.split(",");
+-            if ((phoneId >= 0) && (phoneId < values.length) && (values[phoneId] != null)) {
+-                propVal = values[phoneId];
+-            }
++        if (!SubscriptionManager.isValidPhoneId(phoneId)) {
++            Rlog.d(TAG, "getTelephonyProperty: invalid phoneId=" + phoneId +
++                    " property=" + property);
++            return defaultVal;
+         }
+-        return propVal == null ? defaultVal : propVal;
++        if (phoneId > 0) {
++            property += "_" + phoneId;
++        }
++
++        String propVal = SystemProperties.get(property);
++
++        Rlog.d(TAG, "getTelephonyProperty: return propVal='" + propVal + "' phoneId=" + phoneId
++                + " property='" + property + "' defaultVal='" + defaultVal);
++
++        return propVal.isEmpty() ? defaultVal : propVal;
+     }
+ 
+     /** @hide */
+diff -ur a/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java b/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java
+--- a/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java	2016-11-02 12:05:18.264000000 +0000
++++ b/frameworks/opt/telephony/src/java/com/android/internal/telephony/Phone.java	2016-11-02 12:13:53.312000000 +0000
+@@ -237,6 +237,7 @@
+     private boolean mDnsCheckDisabled;
+     public DcTracker mDcTracker;
+     private boolean mDoesRilSendMultipleCallRing;
++    private boolean mDoesRilSendCallRing;
+     private int mCallRingContinueToken;
+     private int mCallRingDelay;
+     private boolean mIsVoiceCapable = true;
+@@ -477,6 +478,10 @@
+         mDoesRilSendMultipleCallRing = SystemProperties.getBoolean(
+                 TelephonyProperties.PROPERTY_RIL_SENDS_MULTIPLE_CALL_RING, true);
+         Rlog.d(LOG_TAG, "mDoesRilSendMultipleCallRing=" + mDoesRilSendMultipleCallRing);
++        // Some RIL do not even send a single RIL_UNSOL_CALL_RING
++        mDoesRilSendCallRing = SystemProperties.getBoolean(
++                "ro.telephony.call_ring", true);
++        Rlog.d(LOG_TAG, "mDoesRilSendCallRing=" + mDoesRilSendCallRing);
+ 
+         mCallRingDelay = SystemProperties.getInt(
+                 TelephonyProperties.PROPERTY_CALL_RING_DELAY, 3000);
+@@ -2748,6 +2753,13 @@
+     public void notifyNewRingingConnectionP(Connection cn) {
+         if (!mIsVoiceCapable)
+             return;
++        // Fake RIL_UNSOL_CALL_RING if the RIL doesn't send it.
++        if (!mDoesRilSendCallRing) {
++            int token = ++mCallRingContinueToken;
++            sendMessageDelayed(
++                    obtainMessage(EVENT_CALL_RING_CONTINUE, token, 0), mCallRingDelay);
++        }
++
+         AsyncResult ar = new AsyncResult(null, cn, null);
+         mNewRingingConnectionRegistrants.notifyRegistrants(ar);
+     }
+@@ -3457,6 +3469,7 @@
+         pw.println(" mDnsCheckDisabled=" + mDnsCheckDisabled);
+         pw.println(" mDcTracker=" + mDcTracker);
+         pw.println(" mDoesRilSendMultipleCallRing=" + mDoesRilSendMultipleCallRing);
++        pw.println(" mDoesRilSendCallRing=" + mDoesRilSendCallRing);
+         pw.println(" mCallRingContinueToken=" + mCallRingContinueToken);
+         pw.println(" mCallRingDelay=" + mCallRingDelay);
+         pw.println(" mIsVoiceCapable=" + mIsVoiceCapable);
+diff -ur a/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java b/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java
+--- a/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java	2016-11-02 12:14:53.432000000 +0000
++++ b/frameworks/opt/telephony/src/java/com/android/internal/telephony/RIL.java	2016-11-02 12:16:03.124000000 +0000
+@@ -335,7 +335,7 @@
+     static final int RESPONSE_SOLICITED_ACK_EXP = 3;
+     static final int RESPONSE_UNSOLICITED_ACK_EXP = 4;
+ 
+-    static final String[] SOCKET_NAME_RIL = {"rild", "rild2", "rild3"};
++    static final String[] SOCKET_NAME_RIL = {"rild", "rild1", "rild2"};
+ 
+     static final int SOCKET_OPEN_RETRY_MILLIS = 4 * 1000;
+
+--- a/frameworks/native/libs/binder/Parcel.cpp	2016-11-02 11:47:48.792000000 +0000
++++ b/frameworks/native/libs/binder/Parcel.cpp	2016-11-02 11:50:03.684000000 +0000
+@@ -1082,6 +1082,12 @@
+     return writeString16(str.string(), str.size());
+ }
+ 
++extern "C" status_t _ZN7android6Parcel13writeString16EPKDsj(void *parcel, const char16_t* str, size_t len);
++
++extern "C" status_t _ZN7android6Parcel13writeString16EPKtj(void *parcel, const char16_t* str, size_t len) {
++   return _ZN7android6Parcel13writeString16EPKDsj(parcel, str, len);
++}
++
+ status_t Parcel::writeString16(const char16_t* str, size_t len)
+ {
+     if (str == NULL) return writeInt32(-1);
+diff -ur a/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp b/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
+--- a/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp	2016-11-02 11:52:01.608000000 +0000
++++ b/frameworks/native/services/surfaceflinger/SurfaceFlinger_hwc1.cpp	2016-11-02 11:53:42.200000000 +0000
+@@ -3650,6 +3650,10 @@
+         bool isLocalScreenshot, bool useReadPixels)
+ {
+     ATRACE_CALL();
++// Rotation artifact problems when useReadPixels is false
++#ifdef HAWAII_HWC
++    useReadPixels = true;
++#endif
+ 
+     // get screen geometry
+     uint32_t hw_w = hw->getWidth();
+diff -ur a/hardware/broadcom/libbt/src/userial_vendor.c b/hardware/broadcom/libbt/src/userial_vendor.c
+--- a/hardware/broadcom/libbt/src/userial_vendor.c	2016-11-02 12:18:17.808000000 +0000
++++ b/hardware/broadcom/libbt/src/userial_vendor.c	2016-11-02 12:19:14.276000000 +0000
+@@ -196,6 +196,9 @@
+     uint8_t data_bits;
+     uint16_t parity;
+     uint8_t stop_bits;
++#if (BT_WAKE_VIA_USERIAL_IOCTL==TRUE)
++    int ldisc;
++#endif
+ 
+     vnd_userial.fd = -1;
+ 
+@@ -266,6 +269,9 @@
+     tcsetattr(vnd_userial.fd, TCSANOW, &vnd_userial.termios);
+ 
+ #if (BT_WAKE_VIA_USERIAL_IOCTL==TRUE)
++    ldisc = 25; // N_BRCM_HCI
++    ioctl(vnd_userial.fd, TIOCSETD, &ldisc);
++
+     userial_ioctl_init_bt_wake(vnd_userial.fd);
+ #endif
+
+--- a/system/core/include/utils/RefBase.h	2016-11-02 12:25:23.896000000 +0000
++++ b/system/core/include/utils/RefBase.h	2016-11-02 12:26:46.032000000 +0000
+@@ -53,6 +53,15 @@
+ 
+ // ---------------------------------------------------------------------------
+ 
++#ifdef REFBASE_JB_MR1_COMPAT_SYMBOLS
++class ReferenceConverterBase {
++public:
++    virtual size_t getReferenceTypeSize() const = 0;
++    virtual void* getReferenceBase(void const*) const = 0;
++    inline virtual ~ReferenceConverterBase() { }
++};
++#endif
++
+ class ReferenceRenamer {
+ protected:
+     // destructor is purposedly not virtual so we avoid code overhead from
+diff -ur a/system/core/include/utils/VectorImpl.h b/system/core/include/utils/VectorImpl.h
+--- a/system/core/include/utils/VectorImpl.h	2016-11-02 12:24:59.780000000 +0000
++++ b/system/core/include/utils/VectorImpl.h	2016-11-02 12:26:28.092000000 +0000
+@@ -105,7 +105,19 @@
+     virtual void            do_splat(void* dest, const void* item, size_t num) const = 0;
+     virtual void            do_move_forward(void* dest, const void* from, size_t num) const = 0;
+     virtual void            do_move_backward(void* dest, const void* from, size_t num) const = 0;
+-    
++
++#ifdef NEEDS_VECTORIMPL_SYMBOLS
++    // take care of FBC...
++    virtual void            reservedVectorImpl1();
++    virtual void            reservedVectorImpl2();
++    virtual void            reservedVectorImpl3();
++    virtual void            reservedVectorImpl4();
++    virtual void            reservedVectorImpl5();
++    virtual void            reservedVectorImpl6();
++    virtual void            reservedVectorImpl7();
++    virtual void            reservedVectorImpl8();
++#endif
++
+ private:
+         void* _grow(size_t where, size_t amount);
+         void  _shrink(size_t where, size_t amount);
+@@ -156,6 +168,18 @@
+ protected:
+     virtual int             do_compare(const void* lhs, const void* rhs) const = 0;
+ 
++#ifdef NEEDS_VECTORIMPL_SYMBOLS
++    // take care of FBC...
++    virtual void            reservedSortedVectorImpl1();
++    virtual void            reservedSortedVectorImpl2();
++    virtual void            reservedSortedVectorImpl3();
++    virtual void            reservedSortedVectorImpl4();
++    virtual void            reservedSortedVectorImpl5();
++    virtual void            reservedSortedVectorImpl6();
++    virtual void            reservedSortedVectorImpl7();
++    virtual void            reservedSortedVectorImpl8();
++#endif
++
+ private:
+             ssize_t         _indexOrderOf(const void* item, size_t* order = 0) const;
+ 
+diff -ur a/system/core/init/init.cpp b/system/core/init/init.cpp
+--- a/system/core/init/init.cpp	2016-11-02 12:25:23.904000000 +0000
++++ b/system/core/init/init.cpp	2016-11-02 12:27:20.976000000 +0000
+@@ -437,7 +437,7 @@
+ enum selinux_enforcing_status { SELINUX_PERMISSIVE, SELINUX_ENFORCING };
+ 
+ static selinux_enforcing_status selinux_status_from_cmdline() {
+-    selinux_enforcing_status status = SELINUX_ENFORCING;
++    selinux_enforcing_status status = SELINUX_PERMISSIVE;
+ 
+     import_kernel_cmdline(false, [&](const std::string& key, const std::string& value, bool in_qemu) {
+         if (key == "androidboot.selinux" && value == "permissive") {
+diff -ur a/system/core/init/service.cpp b/system/core/init/service.cpp
+--- a/system/core/init/service.cpp	2016-11-02 12:25:23.908000000 +0000
++++ b/system/core/init/service.cpp	2016-11-02 12:27:36.412000000 +0000
+@@ -373,9 +373,9 @@
+         }
+         if (rc == 0 && scon == mycon) {
+             ERROR("Service %s does not have a SELinux domain defined.\n", name_.c_str());
+-            free(mycon);
+-            free(fcon);
+-            return false;
++            //free(mycon);
++            //free(fcon);
++            //return false;
+         }
+         free(mycon);
+         free(fcon);
+diff -ur a/system/core/libnetutils/ifc_utils.c b/system/core/libnetutils/ifc_utils.c
+--- a/system/core/libnetutils/ifc_utils.c	2016-11-02 12:25:23.944000000 +0000
++++ b/system/core/libnetutils/ifc_utils.c	2016-11-02 12:27:07.952000000 +0000
+@@ -737,3 +737,18 @@
+ 
+     return 0;
+ }
++// Required for Broadcom RILD
++int ifc_set_mtu(const char *name, int mtuSz)
++{
++    struct ifreq ifr;
++    int ret;
++    ifc_init_ifr(name, &ifr);
++    ifr.ifr_mtu = mtuSz;
++
++    ret = ioctl(ifc_ctl_sock, SIOCSIFMTU, &ifr);
++    if (ret < 0) {
++        printerr("ifc_set_mtu: SIOCSIFMTU failed: %d\n", ret);
++    }
++
++    return ret;
++}
+diff -ur a/system/core/libutils/RefBase.cpp b/system/core/libutils/RefBase.cpp
+--- a/system/core/libutils/RefBase.cpp	2016-11-02 12:25:23.960000000 +0000
++++ b/system/core/libutils/RefBase.cpp	2016-11-02 12:26:46.032000000 +0000
+@@ -712,6 +712,13 @@
+ 
+ // ---------------------------------------------------------------------------
+ 
++#ifdef REFBASE_JB_MR1_COMPAT_SYMBOLS
++extern "C" void _ZN7android7RefBase14moveReferencesEPvPKvjRKNS_22ReferenceConverterBaseE(void* /*dst*/, void const* /*src*/, size_t /*n*/,
++        const ReferenceConverterBase& /*caster*/)
++{
++}
++#endif
++
+ #if DEBUG_REFS
+ void RefBase::renameRefs(size_t n, const ReferenceRenamer& renamer) {
+     for (size_t i=0 ; i<n ; i++) {
+diff -ur a/system/core/libutils/VectorImpl.cpp b/system/core/libutils/VectorImpl.cpp
+--- a/system/core/libutils/VectorImpl.cpp	2016-11-02 12:25:23.964000000 +0000
++++ b/system/core/libutils/VectorImpl.cpp	2016-11-02 12:26:28.096000000 +0000
+@@ -556,6 +556,17 @@
+     do_move_backward(dest, from, num);
+ }
+ 
++#ifdef NEEDS_VECTORIMPL_SYMBOLS
++void VectorImpl::reservedVectorImpl1() { }
++void VectorImpl::reservedVectorImpl2() { }
++void VectorImpl::reservedVectorImpl3() { }
++void VectorImpl::reservedVectorImpl4() { }
++void VectorImpl::reservedVectorImpl5() { }
++void VectorImpl::reservedVectorImpl6() { }
++void VectorImpl::reservedVectorImpl7() { }
++void VectorImpl::reservedVectorImpl8() { }
++#endif
++
+ /*****************************************************************************/
+ 
+ SortedVectorImpl::SortedVectorImpl(size_t itemSize, uint32_t flags)
+@@ -675,6 +686,17 @@
+     return i;
+ }
+ 
++#ifdef NEEDS_VECTORIMPL_SYMBOLS
++void SortedVectorImpl::reservedSortedVectorImpl1() { };
++void SortedVectorImpl::reservedSortedVectorImpl2() { };
++void SortedVectorImpl::reservedSortedVectorImpl3() { };
++void SortedVectorImpl::reservedSortedVectorImpl4() { };
++void SortedVectorImpl::reservedSortedVectorImpl5() { };
++void SortedVectorImpl::reservedSortedVectorImpl6() { };
++void SortedVectorImpl::reservedSortedVectorImpl7() { };
++void SortedVectorImpl::reservedSortedVectorImpl8() { };
++#endif
++
+ /*****************************************************************************/
+ 
+ }; // namespace android
+diff -ur a/frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java b/frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java
+--- a/frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java	2016-11-02 16:13:26.564000000 +0000
++++ b/frameworks/base/services/core/java/com/android/server/power/PowerManagerService.java	2016-11-02 16:36:53.248000000 +0000
+@@ -194,7 +194,7 @@
+     private static final int HALT_MODE_REBOOT = 1;
+     private static final int HALT_MODE_REBOOT_SAFE_MODE = 2;
+ 
+-    private static final int BUTTON_ON_DURATION = 5 * 1000;
++    private static final int BUTTON_ON_DURATION = 2 * 1000;
+ 
+     private static final float PROXIMITY_NEAR_THRESHOLD = 5.0f;
+ 
+@@ -272,6 +272,7 @@
+     // Timestamp of the last call to user activity.
+     private long mLastUserActivityTime;
+     private long mLastUserActivityTimeNoChangeLights;
++    private long mLastButtonActivityTime;
+ 
+     // Timestamp of last interactive power hint.
+     private long mLastInteractivePowerHintTime;
+@@ -1290,6 +1291,10 @@
+                     return true;
+                 }
+             } else {
++                if (eventTime > mLastButtonActivityTime && (event & PowerManager.USER_ACTIVITY_EVENT_BUTTON) !=0) {
++                    mLastButtonActivityTime = eventTime;
++                    mDirty |= DIRTY_USER_ACTIVITY;
++                }
+                 if (eventTime > mLastUserActivityTime) {
+                     mLastUserActivityTime = eventTime;
+                     mDirty |= DIRTY_USER_ACTIVITY;
+@@ -1850,7 +1855,7 @@
+                             mKeyboardLight.setBrightness(mKeyboardVisible ?
+                                     keyboardBrightness : 0);
+                             if (mButtonTimeout != 0
+-                                    && now > mLastUserActivityTime + mButtonTimeout) {
++                                    && now > mLastButtonActivityTime + mButtonTimeout) {
+                                 mButtonsLight.setBrightness(0);
+                             } else {
+                                 if (!mProximityPositive) {
+diff -ur a/frameworks/av/include/media/stagefright/ColorConverter.h b/frameworks/av/include/media/stagefright/ColorConverter.h
+--- a/frameworks/av/include/media/stagefright/ColorConverter.h	2016-11-02 16:43:49.876000000 +0000
++++ b/frameworks/av/include/media/stagefright/ColorConverter.h	2016-11-02 16:43:02.576000000 +0000
+@@ -67,6 +67,9 @@
+     status_t convertCbYCrY(
+             const BitmapParams &src, const BitmapParams &dst);
+ 
++    status_t convertYCbYCr(
++            const BitmapParams &src, const BitmapParams &dst);
++
+     status_t convertYUV420Planar(
+             const BitmapParams &src, const BitmapParams &dst);
+ 
+diff -ur a/frameworks/av/media/libstagefright/ACodec.cpp b/frameworks/av/media/libstagefright/ACodec.cpp
+--- a/frameworks/av/media/libstagefright/ACodec.cpp	2016-11-02 16:43:49.944000000 +0000
++++ b/frameworks/av/media/libstagefright/ACodec.cpp	2016-11-02 16:43:02.580000000 +0000
+@@ -799,11 +799,7 @@
+ 
+     status_t err;
+     if (mNativeWindow != NULL && portIndex == kPortIndexOutput) {
+-        if (storingMetadataInDecodedBuffers()) {
+-            err = allocateOutputMetadataBuffers();
+-        } else {
+             err = allocateOutputBuffersFromNativeWindow();
+-        }
+     } else {
+         OMX_PARAM_PORTDEFINITIONTYPE def;
+         InitOMXParams(&def);
+@@ -1004,6 +1000,25 @@
+     OMX_COLOR_FORMATTYPE eNativeColorFormat = def.format.video.eColorFormat;
+     setNativeWindowColorFormat(eNativeColorFormat);
+ #endif
++    ALOGE("ACodec:PATCH:setupNativeWindowSizeFormatAndUsage[%s] def.format.video.eColorFormat(%i)", mComponentName.c_str(), def.format.video.eColorFormat);
++    OMX_COLOR_FORMATTYPE HalColorFormat;
++    status_t omxresuilts;
++    switch (def.format.video.eColorFormat) {
++        case OMX_COLOR_FormatYCbYCr:
++            def.format.video.eColorFormat = OMX_COLOR_FormatYUV420Planar;
++            omxresuilts = mOMX->setParameter(mNode, OMX_IndexParamPortDefinition, &def, sizeof(def));
++            if (omxresuilts != OK) {
++                ALOGE("PATCH:ACodec:configureOutputBuffersFromNativeWindow setParameter(OMX_IndexParamPortDefinition) ERROR");
++            }
++            HalColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YV12;
++        break;
++        case OMX_COLOR_FormatYUV420Planar:
++            HalColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YV12;
++        break;
++        default:
++            HalColorFormat = def.format.video.eColorFormat;
++        break;
++    }
+ 
+     ALOGV("gralloc usage: %#x(OMX) => %#x(ACodec)", omxUsage, usage);
+     err = setNativeWindowSizeFormatAndUsage(
+@@ -1013,7 +1028,7 @@
+ #ifdef USE_SAMSUNG_COLORFORMAT
+             eNativeColorFormat,
+ #else
+-            def.format.video.eColorFormat,
++            HalColorFormat,
+ #endif
+             mRotationDegrees,
+             usage,
+@@ -1842,14 +1857,12 @@
+             mInputMetadataType = (MetadataBufferType)storeMeta;
+         }
+ 
+-        uint32_t usageBits;
+-        if (mOMX->getParameter(
+-                mNode, (OMX_INDEXTYPE)OMX_IndexParamConsumerUsageBits,
+-                &usageBits, sizeof(usageBits)) == OK) {
+-            inputFormat->setInt32(
+-                    "using-sw-read-often", !!(usageBits & GRALLOC_USAGE_SW_READ_OFTEN));
+-        }
+     }
++#ifdef HAWAII_HWC
++    else if (!strncmp(mComponentName.c_str(), "OMX.brcm.video.h264.hw.decoder", 30)) {
++           setMinBufferSize(kPortIndexInput, (1280 * 720 * 3) / 2);
++    }
++#endif
+ 
+     int32_t prependSPSPPS = 0;
+     if (encoder
+@@ -2350,22 +2363,24 @@
+         err = setMinBufferSize(kPortIndexInput, (size_t)maxInputSize);
+     } else if (!strcmp("OMX.Nvidia.aac.decoder", mComponentName.c_str())) {
+         err = setMinBufferSize(kPortIndexInput, 8192);  // XXX
++    } else if (!strncmp(mComponentName.c_str(), "OMX.brcm.video.h264.hw.decoder", 30)) {
++        setMinBufferSize(kPortIndexInput, (1280 * 720 * 3) / 2);
+     }
+ 
+-    int32_t priority;
+-    if (msg->findInt32("priority", &priority)) {
+-        err = setPriority(priority);
+-    }
+-
+-    int32_t rateInt = -1;
+-    float rateFloat = -1;
+-    if (!msg->findFloat("operating-rate", &rateFloat)) {
+-        msg->findInt32("operating-rate", &rateInt);
+-        rateFloat = (float)rateInt;  // 16MHz (FLINTMAX) is OK for upper bound.
+-    }
+-    if (rateFloat > 0) {
+-        err = setOperatingRate(rateFloat, video);
+-    }
++    //int32_t priority;
++    //if (msg->findInt32("priority", &priority)) {
++    //    err = setPriority(priority);
++    //}
++
++    //int32_t rateInt = -1;
++    //float rateFloat = -1;
++    //if (!msg->findFloat("operating-rate", &rateFloat)) {
++    //    msg->findInt32("operating-rate", &rateInt);
++    //    rateFloat = (float)rateInt;  // 16MHz (FLINTMAX) is OK for upper bound.
++    //}
++    //if (rateFloat > 0) {
++    //    err = setOperatingRate(rateFloat, video);
++    //}
+ 
+     // NOTE: both mBaseOutputFormat and mOutputFormat are outputFormat to signal first frame.
+     mBaseOutputFormat = outputFormat;
+@@ -3159,12 +3174,37 @@
+     format.nIndex = 0;
+     bool found = false;
+ 
++    if(format.eColorFormat == OMX_COLOR_FormatYCbYCr){
++        if (!strncmp(mComponentName.c_str(), "OMX.brcm.", 9)){
++            format.eColorFormat = OMX_COLOR_FormatYUV420Planar;
++            status_t errs = mOMX->setParameter(mNode, OMX_IndexParamVideoPortFormat, &format, sizeof(format));
++                if (errs != OK){
++                    ALOGE("PATCH:ACodec:setVideoPortFormatType setParameter failed: %d", errs);
++                }
++        }
++    }
++    if(colorFormat == OMX_COLOR_FormatYCbYCr){
++        if (!strncmp(mComponentName.c_str(), "OMX.brcm.", 9)){
++            colorFormat = OMX_COLOR_FormatYUV420Planar;
++        }
++    }
++
+     for (OMX_U32 index = 0; index <= kMaxIndicesToCheck; ++index) {
+         format.nIndex = index;
+         status_t err = mOMX->getParameter(
+                 mNode, OMX_IndexParamVideoPortFormat,
+                 &format, sizeof(format));
+ 
++        if (!strncmp("OMX.brcm.video.h264.hw.decoder", mComponentName.c_str(), 30)) {
++            format.eColorFormat = OMX_COLOR_FormatYUV420Planar;
++        }
++        err = mOMX->getParameter(
++                mNode, OMX_IndexParamVideoPortFormat,
++                     &format, sizeof(format));
++        if((unsigned int)err == 0x80001005){
++            err= OMX_ErrorNoMore;
++        }
++
+         if (err != OK) {
+             return err;
+         }
+@@ -3180,6 +3220,7 @@
+             colorFormat = format.eColorFormat;
+         }
+ 
++
+         // The following assertion is violated by TI's video decoder.
+         // CHECK_EQ(format.nIndex, index);
+ 
+@@ -3273,6 +3314,21 @@
+                 || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar) {
+             break;
+         }
++        if (!strncmp("OMX.brcm.video.h264.hw.decoder", mComponentName.c_str(), 30)) {
++            format.eColorFormat = OMX_COLOR_FormatYUV420Planar;
++        }
++        if (format.eColorFormat == OMX_COLOR_FormatYUV420Planar) {
++            while (OMX_ErrorNoMore != err) {
++            format.nIndex++;
++            err = mOMX->getParameter(
++                    mNode, OMX_IndexParamVideoPortFormat,
++                        &format, sizeof(format));
++            if((unsigned int)err == 0x80001005){
++                err = OMX_ErrorNoMore;
++            }
++            }
++        }
++
+         // find best legacy non-standard format
+         OMX_U32 flexibleEquivalent;
+         if (legacyFormat.eColorFormat == OMX_COLOR_FormatUnused
+@@ -4852,6 +4908,16 @@
+     image.mNumPlanes = 0;
+ 
+     const OMX_COLOR_FORMATTYPE fmt = params.eColorFormat;
++
++    switch(params.eColorFormat){
++        case OMX_COLOR_FormatYCbYCr:{
++            params.eColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YV12;
++        }
++        break;
++        default:
++        break;
++    }
++
+     image.mWidth = params.nFrameWidth;
+     image.mHeight = params.nFrameHeight;
+ 
+@@ -7746,14 +7812,14 @@
+         }
+     }
+ 
+-    float rate;
+-    if (params->findFloat("operating-rate", &rate) && rate > 0) {
+-        status_t err = setOperatingRate(rate, mIsVideo);
+-        if (err != OK) {
+-            ALOGE("Failed to set parameter 'operating-rate' (err %d)", err);
+-            return err;
+-        }
+-    }
++    //float rate;
++    //if (params->findFloat("operating-rate", &rate) && rate > 0) {
++    //    status_t err = setOperatingRate(rate, mIsVideo);
++    //    if (err != OK) {
++    //        ALOGE("Failed to set parameter 'operating-rate' (err %d)", err);
++    //        return err;
++    //    }
++    //}
+ 
+     int32_t intraRefreshPeriod = 0;
+     if (params->findInt32("intra-refresh-period", &intraRefreshPeriod)
+@@ -8397,9 +8463,13 @@
+                     builder->addColorFormat(flexibleEquivalent);
+                 }
+             }
+-            supportedColors.push(portFormat.eColorFormat);
+-            builder->addColorFormat(portFormat.eColorFormat);
+-
++            if(portFormat.eColorFormat == OMX_COLOR_FormatYCbYCr) {
++                supportedColors.push(OMX_COLOR_FormatYUV420Planar);
++                builder->addColorFormat(OMX_COLOR_FormatYUV420Planar);
++            }else{
++                supportedColors.push(portFormat.eColorFormat);
++                builder->addColorFormat(portFormat.eColorFormat);
++            }
+             if (index == kMaxIndicesToCheck) {
+                 ALOGW("[%s] stopping checking formats after %u: %s(%x)",
+                         name.c_str(), index,
+diff -ur a/frameworks/av/media/libstagefright/MPEG4Writer.cpp b/frameworks/av/media/libstagefright/MPEG4Writer.cpp
+--- a/frameworks/av/media/libstagefright/MPEG4Writer.cpp	2016-11-02 16:43:49.956000000 +0000
++++ b/frameworks/av/media/libstagefright/MPEG4Writer.cpp	2016-11-02 16:43:02.584000000 +0000
+@@ -2523,14 +2523,10 @@
+         if (mResumed) {
+             int64_t durExcludingEarlierPausesUs = timestampUs - previousPausedDurationUs;
+             if (WARN_UNLESS(durExcludingEarlierPausesUs >= 0ll, "for %s track", trackName)) {
+-                copy->release();
+-                return ERROR_MALFORMED;
+             }
+ 
+             int64_t pausedDurationUs = durExcludingEarlierPausesUs - mTrackDurationUs;
+             if (WARN_UNLESS(pausedDurationUs >= lastDurationUs, "for %s track", trackName)) {
+-                copy->release();
+-                return ERROR_MALFORMED;
+             }
+ 
+             previousPausedDurationUs += pausedDurationUs - lastDurationUs;
+@@ -2539,8 +2535,6 @@
+ 
+         timestampUs -= previousPausedDurationUs;
+         if (WARN_UNLESS(timestampUs >= 0ll, "for %s track", trackName)) {
+-            copy->release();
+-            return ERROR_MALFORMED;
+         }
+ 
+         if (!mIsAudio) {
+@@ -2566,8 +2560,6 @@
+             cttsOffsetTimeUs =
+                     timestampUs + kMaxCttsOffsetTimeUs - decodingTimeUs;
+             if (WARN_UNLESS(cttsOffsetTimeUs >= 0ll, "for %s track", trackName)) {
+-                copy->release();
+-                return ERROR_MALFORMED;
+             }
+ 
+             timestampUs = decodingTimeUs;
+@@ -2578,8 +2570,6 @@
+             currCttsOffsetTimeTicks =
+                     (cttsOffsetTimeUs * mTimeScale + 500000LL) / 1000000LL;
+             if (WARN_UNLESS(currCttsOffsetTimeTicks <= 0x0FFFFFFFFLL, "for %s track", trackName)) {
+-                copy->release();
+-                return ERROR_MALFORMED;
+             }
+ 
+             if (mStszTableEntries->count() == 0) {
+@@ -2620,8 +2610,6 @@
+         }
+ 
+         if (WARN_UNLESS(timestampUs >= 0ll, "for %s track", trackName)) {
+-            copy->release();
+-            return ERROR_MALFORMED;
+         }
+ 
+         ALOGV("%s media time stamp: %" PRId64 " and previous paused duration %" PRId64,
+@@ -2641,9 +2629,9 @@
+         if (currDurationTicks < 0ll) {
+             ALOGE("do not support out of order frames (timestamp: %lld < last: %lld for %s track",
+                     (long long)timestampUs, (long long)lastTimestampUs, trackName);
+-            copy->release();
+-            mSource->stop();
+-            return UNKNOWN_ERROR;
++            //copy->release();
++            //mSource->stop();
++            //return UNKNOWN_ERROR;
+         }
+ 
+         // if the duration is different for this sample, see if it is close enough to the previous
+@@ -2741,7 +2729,6 @@
+     }
+ 
+     if (isTrackMalFormed()) {
+-        err = ERROR_MALFORMED;
+     }
+ 
+     mOwner->trackProgressStatus(mTrackId, -1, err);
+diff -ur a/frameworks/av/media/libstagefright/colorconversion/ColorConverter.cpp b/frameworks/av/media/libstagefright/colorconversion/ColorConverter.cpp
+--- a/frameworks/av/media/libstagefright/colorconversion/ColorConverter.cpp	2016-11-02 16:43:49.992000000 +0000
++++ b/frameworks/av/media/libstagefright/colorconversion/ColorConverter.cpp	2016-11-02 16:43:02.584000000 +0000
+@@ -48,6 +48,7 @@
+     switch (mSrcFormat) {
+         case OMX_COLOR_FormatYUV420Planar:
+         case OMX_COLOR_FormatCbYCrY:
++        case OMX_COLOR_FormatYCbYCr:
+         case OMX_QCOM_COLOR_FormatYVU420SemiPlanar:
+         case OMX_COLOR_FormatYUV420SemiPlanar:
+         case OMX_TI_COLOR_FormatYUV420PackedSemiPlanar:
+@@ -117,6 +118,10 @@
+         case OMX_COLOR_FormatCbYCrY:
+             err = convertCbYCrY(src, dst);
+             break;
++            
++        case OMX_COLOR_FormatYCbYCr:
++            err = convertYCbYCr(src, dst);
++            break;     
+ 
+         case OMX_QCOM_COLOR_FormatYVU420SemiPlanar:
+             err = convertQCOMYUV420SemiPlanar(src, dst);
+@@ -204,6 +209,71 @@
+     return OK;
+ }
+ 
++status_t ColorConverter::convertYCbYCr(
++        const BitmapParams &src, const BitmapParams &dst) {
++        ALOGE("PATCH:ColorConverter:convertYCbYCr");
++    // XXX Untested
++
++    uint8_t *kAdjustedClip = initClip();
++
++    if (!((src.mCropLeft & 1) == 0
++        && src.cropWidth() == dst.cropWidth()
++        && src.cropHeight() == dst.cropHeight())) {
++        return ERROR_UNSUPPORTED;
++    }
++
++    uint16_t *dst_ptr = (uint16_t *)dst.mBits
++        + dst.mCropTop * dst.mWidth + dst.mCropLeft;
++
++    const uint8_t *src_ptr = (const uint8_t *)src.mBits
++        + (src.mCropTop * dst.mWidth + src.mCropLeft) * 2;
++
++    for (size_t y = 0; y < src.cropHeight(); ++y) {
++        for (size_t x = 0; x < src.cropWidth(); x += 2) {
++            signed y1 = (signed)src_ptr[2 * x ] - 16;
++            signed y2 = (signed)src_ptr[2 * x + 2] - 16;
++            signed u = (signed)src_ptr[2 * x + 1] - 128;  
++            signed v = (signed)src_ptr[2 * x + 3] - 128;
++
++            signed u_b = u * 517;
++            signed u_g = -u * 100;
++            signed v_g = -v * 208;
++            signed v_r = v * 409;
++
++            signed tmp1 = y1 * 298;
++            signed b1 = (tmp1 + u_b) / 256;
++            signed g1 = (tmp1 + v_g + u_g) / 256;
++            signed r1 = (tmp1 + v_r) / 256;
++
++            signed tmp2 = y2 * 298;
++            signed b2 = (tmp2 + u_b) / 256;
++            signed g2 = (tmp2 + v_g + u_g) / 256;
++            signed r2 = (tmp2 + v_r) / 256;
++
++            uint32_t rgb1 =
++                ((kAdjustedClip[r1] >> 3) << 11)
++                | ((kAdjustedClip[g1] >> 2) << 5)
++                | (kAdjustedClip[b1] >> 3);
++
++            uint32_t rgb2 =
++                ((kAdjustedClip[r2] >> 3) << 11)
++                | ((kAdjustedClip[g2] >> 2) << 5)
++                | (kAdjustedClip[b2] >> 3);
++
++            if (x + 1 < src.cropWidth()) {
++                *(uint32_t *)(&dst_ptr[x]) = (rgb2 << 16) | rgb1;
++            } else {
++                dst_ptr[x] = rgb1;
++            }
++        }
++
++        src_ptr += src.mWidth * 2;
++        dst_ptr += dst.mWidth;
++    }
++
++    return OK;
++}
++
+ status_t ColorConverter::convertYUV420PlanarUseLibYUV(
+         const BitmapParams &src, const BitmapParams &dst) {
+     if (!((src.mCropLeft & 1) == 0
+@@ -557,4 +627,4 @@
+     return &mClip[-kClipMin];
+ }
+ 
+-}  // namespace android
++}  // namespace android
+\ No newline at end of file
+diff -ur a/frameworks/av/media/libstagefright/omx/GraphicBufferSource.cpp b/frameworks/av/media/libstagefright/omx/GraphicBufferSource.cpp
+--- a/frameworks/av/media/libstagefright/omx/GraphicBufferSource.cpp	2016-11-02 16:43:50.012000000 +0000
++++ b/frameworks/av/media/libstagefright/omx/GraphicBufferSource.cpp	2016-11-02 16:43:02.584000000 +0000
+@@ -381,6 +381,7 @@
+             }
+         } else if (type == kMetadataBufferTypeANWBuffer
+                 && header->nAllocLen >= sizeof(VideoNativeMetadata)) {
++#ifndef HAWAII_HWC
+             VideoNativeMetadata &nativeMeta = *(VideoNativeMetadata *)data;
+             if (nativeMeta.pBuffer != codecBuffer.mGraphicBuffer->getNativeBuffer()) {
+                 // should never happen
+@@ -388,6 +389,7 @@
+                         nativeMeta.pBuffer, codecBuffer.mGraphicBuffer->getNativeBuffer());
+                 CHECK(!"codecBufferEmptied: mismatched buffer");
+             }
++#endif
+         }
+     }
+ 
+diff -ur a/frameworks/av/services/audioflinger/Threads.cpp b/frameworks/av/services/audioflinger/Threads.cpp
+--- a/frameworks/av/services/audioflinger/Threads.cpp	2016-11-02 16:43:50.056000000 +0000
++++ b/frameworks/av/services/audioflinger/Threads.cpp	2016-11-02 16:43:15.304000000 +0000
+@@ -6294,6 +6294,7 @@
+         mTimestamp.mPosition[ExtendedTimestamp::LOCATION_SERVER] += framesRead;
+         mTimestamp.mTimeNs[ExtendedTimestamp::LOCATION_SERVER] = systemTime();
+ 
++#ifndef HAWAII_HWC
+         // Update server timestamp with kernel stats
+         if (mInput->stream->get_capture_position != nullptr
+                 && mPipeSource.get() == nullptr /* don't obtain for FastCapture, could block */) {
+@@ -6309,6 +6310,7 @@
+                 // as the read obtains a lock, preventing the timestamp call from executing.
+             }
+         }
++#endif
+         // Use this to track timestamp information
+         // ALOGD("%s", mTimestamp.toString().c_str());
+
+diff -ur a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java
+--- a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java	2016-11-02 16:47:21.404000000 +0000
++++ b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java	2016-11-02 16:48:21.792000000 +0000
+@@ -1547,6 +1547,7 @@
+             return "*** failed to read kernel log ***";
+         }
+     }
++    public native static boolean setMode(int mode);
+ 
+     /* WIFI HAL support */
+ 
+diff -ur a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java
+--- a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java	2016-11-02 16:47:21.416000000 +0000
++++ b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java	2016-11-02 16:48:21.776000000 +0000
+@@ -1788,6 +1788,7 @@
+      */
+     public void setSupplicantRunning(boolean enable) {
+         if (enable) {
++            WifiNative.setMode(0);
+             sendMessage(CMD_START_SUPPLICANT);
+         } else {
+             mDisconnectDelayDuration = -1;
+@@ -1815,6 +1816,7 @@
+      */
+     public void setHostApRunning(WifiConfiguration wifiConfig, boolean enable) {
+         if (enable) {
++            WifiNative.setMode(1);
+             sendMessage(CMD_START_AP, wifiConfig);
+         } else {
+             sendMessage(CMD_STOP_AP);
+diff -ur a/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp b/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp
+--- a/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp	2016-11-02 16:47:21.448000000 +0000
++++ b/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp	2016-11-02 16:48:21.732000000 +0000
+@@ -136,6 +136,11 @@
+     return env->NewString((const jchar *)str.string(), str.size());
+ }
+ 
++static jboolean android_net_wifi_setMode(JNIEnv* env, jobject, jint type)
++{
++    return (jboolean)(::wifi_set_mode(type) == 0);
++}
++
+ static jboolean android_net_wifi_isDriverLoaded(JNIEnv* env, jclass)
+ {
+     return (::is_wifi_driver_loaded() == 1);
+@@ -2605,6 +2610,7 @@
+     { "doIntCommandNative", "(Ljava/lang/String;)I", (void*)android_net_wifi_doIntCommand },
+     { "doStringCommandNative", "(Ljava/lang/String;)Ljava/lang/String;",
+             (void*) android_net_wifi_doStringCommand },
++    { "setMode", "(I)Z", (void*) android_net_wifi_setMode},
+     { "startHalNative", "()Z", (void*) android_net_wifi_startHal },
+     { "stopHalNative", "()V", (void*) android_net_wifi_stopHal },
+     { "waitForHalEventNative", "()V", (void*) android_net_wifi_waitForHalEvents },
+diff -ur a/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java b/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java
+--- a/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java	2016-11-03 04:41:44.908000000 +0000
++++ b/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java	2016-11-03 04:44:14.452000000 +0000
+@@ -259,7 +259,6 @@
+         // Only visible on devices that does not have a navigation bar already,
+         // and don't even try unless the existing keys can be disabled
+         boolean needsNavigationBar = false;
+-        if (hardware.isSupported(CMHardwareManager.FEATURE_KEY_DISABLE)) {
+             try {
+                 IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+                 needsNavigationBar = wm.needsNavigationBar();
+@@ -274,9 +273,6 @@
+                 mNavigationPreferencesCat.setEnabled(mDisableNavigationKeys.isChecked());
+                 updateDisableNavkeysCategories(mDisableNavigationKeys.isChecked());
+             }
+-        } else {
+-            prefScreen.removePreference(mDisableNavigationKeys);
+-        }
+ 
+         if (hasPowerKey) {
+             if (!TelephonyUtils.isVoiceCapable(getActivity())) {
+diff -urN a/frameworks/av/camera/cameraserver/Android.mk b/frameworks/av/camera/cameraserver/Android.mk
+--- a/frameworks/av/camera/cameraserver/Android.mk	2016-11-03 11:22:35.104000000 +0000
++++ b/frameworks/av/camera/cameraserver/Android.mk	1970-01-01 00:00:00.000000000 +0000
+@@ -1,36 +0,0 @@
+-# Copyright 2015 The Android Open Source Project
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-#      http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-LOCAL_PATH:= $(call my-dir)
+-
+-include $(CLEAR_VARS)
+-
+-LOCAL_SRC_FILES:= \
+-	main_cameraserver.cpp
+-
+-LOCAL_SHARED_LIBRARIES := \
+-	libcameraservice \
+-	libcutils \
+-	libutils \
+-	libbinder \
+-	libcamera_client
+-
+-LOCAL_MODULE:= cameraserver
+-LOCAL_32_BIT_ONLY := true
+-
+-LOCAL_CFLAGS += -Wall -Wextra -Werror -Wno-unused-parameter
+-
+-LOCAL_INIT_RC := cameraserver.rc
+-
+-include $(BUILD_EXECUTABLE)
+diff -urN a/frameworks/av/camera/cameraserver/cameraserver.rc b/frameworks/av/camera/cameraserver/cameraserver.rc
+--- a/frameworks/av/camera/cameraserver/cameraserver.rc	2016-11-03 11:22:35.108000000 +0000
++++ b/frameworks/av/camera/cameraserver/cameraserver.rc	1970-01-01 00:00:00.000000000 +0000
+@@ -1,6 +0,0 @@
+-service cameraserver /system/bin/cameraserver
+-    class main
+-    user cameraserver
+-    group audio camera input drmrpc
+-    ioprio rt 4
+-    writepid /dev/cpuset/camera-daemon/tasks /dev/stune/top-app/tasks
+diff -urN a/frameworks/av/camera/cameraserver/main_cameraserver.cpp b/frameworks/av/camera/cameraserver/main_cameraserver.cpp
+--- a/frameworks/av/camera/cameraserver/main_cameraserver.cpp	2016-11-03 11:22:35.108000000 +0000
++++ b/frameworks/av/camera/cameraserver/main_cameraserver.cpp	1970-01-01 00:00:00.000000000 +0000
+@@ -1,35 +0,0 @@
+-/*
+- * Copyright (C) 2015 The Android Open Source Project
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-
+-#define LOG_TAG "cameraserver"
+-//#define LOG_NDEBUG 0
+-
+-// from LOCAL_C_INCLUDES
+-#include "CameraService.h"
+-
+-using namespace android;
+-
+-int main(int argc __unused, char** argv __unused)
+-{
+-    signal(SIGPIPE, SIG_IGN);
+-
+-    sp<ProcessState> proc(ProcessState::self());
+-    sp<IServiceManager> sm = defaultServiceManager();
+-    ALOGI("ServiceManager: %p", sm.get());
+-    CameraService::instantiate();
+-    ProcessState::self()->startThreadPool();
+-    IPCThreadState::self()->joinThreadPool();
+-}
+diff -urN a/frameworks/av/cmds/stagefright/Android.mk b/frameworks/av/cmds/stagefright/Android.mk
+--- a/frameworks/av/cmds/stagefright/Android.mk	2016-11-03 11:22:35.112000000 +0000
++++ b/frameworks/av/cmds/stagefright/Android.mk	2016-11-03 11:23:38.620000000 +0000
+@@ -39,8 +39,7 @@
+ 
+ LOCAL_C_INCLUDES:= \
+ 	frameworks/av/media/libstagefright \
+-	$(TOP)/frameworks/native/include/media/openmax \
+-	$(TOP)/frameworks/native/include/media/hardware
++	$(TOP)/frameworks/native/include/media/openmax
+ 
+ LOCAL_CFLAGS += -Wno-multichar -Werror -Wall
+ LOCAL_CLANG := true
+@@ -64,8 +63,7 @@
+ 
+ LOCAL_C_INCLUDES:= \
+ 	frameworks/av/media/libstagefright \
+-	$(TOP)/frameworks/native/include/media/openmax \
+-	$(TOP)/frameworks/native/include/media/hardware
++	$(TOP)/frameworks/native/include/media/openmax
+ 
+ LOCAL_CFLAGS += -Wno-multichar -Werror -Wall
+ LOCAL_CLANG := true
+diff -urN a/frameworks/av/include/media/IOMX.h b/frameworks/av/include/media/IOMX.h
+--- a/frameworks/av/include/media/IOMX.h	2016-11-03 11:22:35.140000000 +0000
++++ b/frameworks/av/include/media/IOMX.h	2016-11-03 11:23:38.692000000 +0000
+@@ -278,18 +278,17 @@
+     OMX_U32 mLevel;
+ };
+ 
+-inline static const char *asString(MetadataBufferType i, const char *def = "??") {
++}  // namespace android
++
++inline static const char *asString(android::MetadataBufferType i, const char *def = "??") {
+     using namespace android;
+     switch (i) {
+         case kMetadataBufferTypeCameraSource:   return "CameraSource";
+         case kMetadataBufferTypeGrallocSource:  return "GrallocSource";
+         case kMetadataBufferTypeANWBuffer:      return "ANWBuffer";
+-        case kMetadataBufferTypeNativeHandleSource: return "NativeHandleSource";
+         case kMetadataBufferTypeInvalid:        return "Invalid";
+         default:                                return def;
+     }
+ }
+ 
+-}  // namespace android
+-
+ #endif  // ANDROID_IOMX_H_
+diff -urN a/frameworks/av/include/media/stagefright/CameraSource.h b/frameworks/av/include/media/stagefright/CameraSource.h
+--- a/frameworks/av/include/media/stagefright/CameraSource.h	2016-11-03 11:22:35.144000000 +0000
++++ b/frameworks/av/include/media/stagefright/CameraSource.h	2016-11-03 11:23:38.620000000 +0000
+@@ -28,7 +28,6 @@
+ #include <utils/List.h>
+ #include <utils/RefBase.h>
+ #include <utils/String16.h>
+-#include <MetadataBufferType.h>
+ 
+ namespace android {
+ 
+@@ -119,11 +118,11 @@
+      * Tell whether this camera source stores meta data or real YUV
+      * frame data in video buffers.
+      *
+-     * @return a valid type if meta data is stored in the video
+-     *      buffers; kMetadataBufferTypeInvalid if real YUV data is stored in
++     * @return true if meta data is stored in the video
++     *      buffers; false if real YUV data is stored in
+      *      the video buffers.
+      */
+-    MetadataBufferType metaDataStoredInVideoBuffers() const;
++    bool isMetaDataStoredInVideoBuffers() const;
+ 
+     virtual void signalBufferReturned(MediaBuffer* buffer);
+ 
+diff -urN a/frameworks/av/include/media/stagefright/SurfaceMediaSource.h b/frameworks/av/include/media/stagefright/SurfaceMediaSource.h
+--- a/frameworks/av/include/media/stagefright/SurfaceMediaSource.h	2016-11-03 11:22:35.148000000 +0000
++++ b/frameworks/av/include/media/stagefright/SurfaceMediaSource.h	2016-11-03 11:23:38.620000000 +0000
+@@ -25,8 +25,6 @@
+ #include <media/stagefright/MediaSource.h>
+ #include <media/stagefright/MediaBuffer.h>
+ 
+-#include <media/hardware/MetadataBufferType.h>
+-
+ #include "foundation/ABase.h"
+ 
+ namespace android {
+@@ -111,9 +109,9 @@
+     void dump(String8& result, const char* prefix, char* buffer,
+                                                     size_t SIZE) const;
+ 
+-    // metaDataStoredInVideoBuffers tells the encoder what kind of metadata
+-    // is passed through the buffers. Currently, it is set to ANWBuffer
+-    MetadataBufferType metaDataStoredInVideoBuffers() const;
++    // isMetaDataStoredInVideoBuffers tells the encoder whether we will
++    // pass metadata through the buffers. Currently, it is force set to true
++    bool isMetaDataStoredInVideoBuffers() const;
+ 
+     sp<IGraphicBufferProducer> getProducer() const { return mProducer; }
+ 
+@@ -236,9 +234,6 @@
+ 
+     Condition mMediaBuffersAvailableCondition;
+ 
+-    // Allocate and return a new MediaBuffer and pass the ANW buffer as metadata into it.
+-    void passMetadataBuffer_l(MediaBuffer **buffer, ANativeWindowBuffer *bufferHandle) const;
+-
+     // Avoid copying and equating and default constructor
+     DISALLOW_EVIL_CONSTRUCTORS(SurfaceMediaSource);
+ };
+diff -urN a/frameworks/av/media/libmedia/IOMX.cpp b/frameworks/av/media/libmedia/IOMX.cpp
+--- a/frameworks/av/media/libmedia/IOMX.cpp	2016-11-03 11:22:35.172000000 +0000
++++ b/frameworks/av/media/libmedia/IOMX.cpp	2016-11-03 11:23:38.624000000 +0000
+@@ -438,9 +438,7 @@
+         data.writeInterfaceToken(IOMX::getInterfaceDescriptor());
+         data.writeInt32((int32_t)node);
+         data.writeInt32(port_index);
+-        data.writeInt32((int32_t)enable);
+-        data.writeInt32(type == NULL ? kMetadataBufferTypeANWBuffer : *type);
+-
++        data.writeInt32((uint32_t)enable);
+         remote()->transact(STORE_META_DATA_IN_BUFFERS, data, &reply);
+ 
+         // read type even storeMetaDataInBuffers failed
+@@ -1046,7 +1044,7 @@
+             OMX_U32 port_index = data.readInt32();
+             OMX_BOOL enable = (OMX_BOOL)data.readInt32();
+ 
+-            MetadataBufferType type = (MetadataBufferType)data.readInt32();
++            MetadataBufferType type = kMetadataBufferTypeInvalid;
+             status_t err = storeMetaDataInBuffers(node, port_index, enable, &type);
+ 
+             reply->writeInt32(type);
+diff -urN a/frameworks/av/media/libmediaplayerservice/Android.mk b/frameworks/av/media/libmediaplayerservice/Android.mk
+--- a/frameworks/av/media/libmediaplayerservice/Android.mk	2016-11-03 11:22:35.176000000 +0000
++++ b/frameworks/av/media/libmediaplayerservice/Android.mk	2016-11-03 11:23:38.624000000 +0000
+@@ -54,7 +54,6 @@
+     $(TOP)/frameworks/av/include/media                              \
+     $(TOP)/frameworks/av/include/camera                             \
+     $(TOP)/frameworks/native/include/media/openmax                  \
+-    $(TOP)/frameworks/native/include/media/hardware                 \
+     $(TOP)/external/tremolo/Tremolo                                 \
+     libcore/include                                                 \
+     $(TOP)/frameworks/av/media/libavextensions                      \
+diff -urN a/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.cpp b/frameworks/av/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.cpp
+--- a/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.cpp	2016-11-03 11:22:35.184000000 +0000
++++ b/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.cpp	2016-11-03 11:23:38.688000000 +0000
+@@ -1523,8 +1523,8 @@
+ 
+     CHECK(mFrameRate != -1);
+ 
+-    mMetaDataStoredInVideoBuffers =
+-        (*cameraSource)->metaDataStoredInVideoBuffers();
++    mIsMetaDataStoredInVideoBuffers =
++        (*cameraSource)->isMetaDataStoredInVideoBuffers();
+ 
+     return OK;
+ }
+@@ -1651,11 +1651,11 @@
+         format->setInt32("android._prefer-b-frames", preferBFrames);
+     }
+ 
+-    if (mMetaDataStoredInVideoBuffers != kMetadataBufferTypeInvalid) {
+-        format->setInt32("android._input-metadata-buffer-type", mMetaDataStoredInVideoBuffers);
++    uint32_t flags = 0;
++    if (mIsMetaDataStoredInVideoBuffers) {
++        flags |= MediaCodecSource::FLAG_USE_METADATA_INPUT;
+     }
+ 
+-    uint32_t flags = 0;
+     if (cameraSource == NULL) {
+         flags |= MediaCodecSource::FLAG_USE_SURFACE_INPUT;
+     } else {
+@@ -1974,7 +1974,7 @@
+     mCaptureFps = 0.0f;
+     mTimeBetweenCaptureUs = -1;
+     mCameraSourceTimeLapse = NULL;
+-    mMetaDataStoredInVideoBuffers = kMetadataBufferTypeInvalid;
++    mIsMetaDataStoredInVideoBuffers = false;
+     mEncoderProfiles = MediaProfiles::getInstance();
+     mRotationDegrees = 0;
+     mLatitudex10000 = -3600000;
+diff -urN a/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.h b/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.h
+--- a/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.h	2016-11-03 11:22:35.184000000 +0000
++++ b/frameworks/av/media/libmediaplayerservice/StagefrightRecorder.h	2016-11-03 11:23:38.624000000 +0000
+@@ -24,8 +24,6 @@
+ #include <media/stagefright/MediaSource.h>
+ #include <system/audio.h>
+ 
+-#include <MetadataBufferType.h>
+-
+ namespace android {
+ 
+ class Camera;
+@@ -124,7 +122,7 @@
+ 
+     String8 mParams;
+ 
+-    MetadataBufferType mMetaDataStoredInVideoBuffers;
++    bool mIsMetaDataStoredInVideoBuffers;
+     MediaProfiles *mEncoderProfiles;
+ 
+     int64_t mPauseStartTimeUs;
+diff -urN a/frameworks/av/media/libstagefright/ACodec.cpp b/frameworks/av/media/libstagefright/ACodec.cpp
+--- a/frameworks/av/media/libstagefright/ACodec.cpp	2016-11-03 11:22:35.200000000 +0000
++++ b/frameworks/av/media/libstagefright/ACodec.cpp	2016-11-03 11:29:24.812000000 +0000
+@@ -816,10 +816,10 @@
+             MetadataBufferType type =
+                 portIndex == kPortIndexOutput ? mOutputMetadataType : mInputMetadataType;
+             size_t bufSize = def.nBufferSize;
+-            if (type == kMetadataBufferTypeANWBuffer) {
++            if (type == kMetadataBufferTypeGrallocSource) {
++                bufSize = sizeof(VideoGrallocMetadata);
++            } else if (type == kMetadataBufferTypeANWBuffer) {
+                 bufSize = sizeof(VideoNativeMetadata);
+-            } else if (type == kMetadataBufferTypeNativeHandleSource) {
+-                bufSize = sizeof(VideoNativeHandleMetadata);
+             }
+ 
+             // If using gralloc or native source input metadata buffers, allocate largest
+@@ -827,7 +827,7 @@
+             // may require gralloc source. For camera source, allocate at least enough
+             // size for native metadata buffers.
+             size_t allottedSize = bufSize;
+-            if (portIndex == kPortIndexInput && type == kMetadataBufferTypeANWBuffer) {
++            if (portIndex == kPortIndexInput && type >= kMetadataBufferTypeGrallocSource) {
+                 bufSize = max(sizeof(VideoGrallocMetadata), sizeof(VideoNativeMetadata));
+             } else if (portIndex == kPortIndexInput && type == kMetadataBufferTypeCameraSource) {
+                 bufSize = max(bufSize, sizeof(VideoNativeMetadata));
+@@ -1826,20 +1826,19 @@
+ 
+     int32_t storeMeta;
+     if (encoder
+-            && msg->findInt32("android._input-metadata-buffer-type", &storeMeta)
+-            && storeMeta != kMetadataBufferTypeInvalid) {
+-        mInputMetadataType = (MetadataBufferType)storeMeta;
+-        err = mOMX->storeMetaDataInBuffers(
+-                mNode, kPortIndexInput, OMX_TRUE, &mInputMetadataType);
++            && msg->findInt32("store-metadata-in-buffers", &storeMeta)
++            && storeMeta != 0) {
++        err = mOMX->storeMetaDataInBuffers(mNode, kPortIndexInput, OMX_TRUE, &mInputMetadataType);
+         if (err != OK) {
+             ALOGE("[%s] storeMetaDataInBuffers (input) failed w/ err %d",
+                     mComponentName.c_str(), err);
+ 
+             return err;
+-        } else if (storeMeta == kMetadataBufferTypeANWBuffer
+-                && mInputMetadataType == kMetadataBufferTypeGrallocSource) {
+-            // IOMX translates ANWBuffers to gralloc source already.
+-            mInputMetadataType = (MetadataBufferType)storeMeta;
++        }
++        // For this specific case we could be using camera source even if storeMetaDataInBuffers
++        // returns Gralloc source. Pretend that we are; this will force us to use nBufferSize.
++        if (mInputMetadataType == kMetadataBufferTypeGrallocSource) {
++            mInputMetadataType = kMetadataBufferTypeCameraSource;
+         }
+ 
+         uint32_t usageBits;
+@@ -1885,10 +1884,9 @@
+     mIsVideo = video;
+     if (encoder && video) {
+         OMX_BOOL enable = (OMX_BOOL) (prependSPSPPS
+-            && msg->findInt32("android._store-metadata-in-buffers-output", &storeMeta)
++            && msg->findInt32("store-metadata-in-buffers-output", &storeMeta)
+             && storeMeta != 0);
+ 
+-        mOutputMetadataType = kMetadataBufferTypeNativeHandleSource;
+         err = mOMX->storeMetaDataInBuffers(mNode, kPortIndexOutput, enable, &mOutputMetadataType);
+         if (err != OK) {
+             ALOGE("[%s] storeMetaDataInBuffers (output) failed w/ err %d",
+@@ -2017,7 +2015,6 @@
+             }
+ 
+             // Always try to enable dynamic output buffers on native surface
+-            mOutputMetadataType = kMetadataBufferTypeANWBuffer;
+             err = mOMX->storeMetaDataInBuffers(
+                     mNode, kPortIndexOutput, OMX_TRUE, &mOutputMetadataType);
+             if (err != OK) {
+@@ -6166,6 +6163,7 @@
+ 
+                 status_t err2 = OK;
+                 switch (metaType) {
++                case kMetadataBufferTypeCameraSource:
+                 case kMetadataBufferTypeInvalid:
+                     break;
+ #ifndef OMX_ANDROID_COMPILE_AS_32BIT_ON_64BIT_PLATFORMS
+@@ -6396,15 +6394,18 @@
+ 
+             if (mCodec->usingMetadataOnEncoderOutput()) {
+                 native_handle_t *handle = NULL;
+-                VideoNativeHandleMetadata &nativeMeta =
+-                    *(VideoNativeHandleMetadata *)info->mData->data();
+-                if (info->mData->size() >= sizeof(nativeMeta)
+-                        && nativeMeta.eType == kMetadataBufferTypeNativeHandleSource) {
++                VideoGrallocMetadata &grallocMeta = *(VideoGrallocMetadata *)info->mData->data();
++                VideoNativeMetadata &nativeMeta = *(VideoNativeMetadata *)info->mData->data();
++                if (info->mData->size() >= sizeof(grallocMeta)
++                        && grallocMeta.eType == kMetadataBufferTypeGrallocSource) {
++                    handle = (native_handle_t *)(uintptr_t)grallocMeta.pHandle;
++                } else if (info->mData->size() >= sizeof(nativeMeta)
++                        && nativeMeta.eType == kMetadataBufferTypeANWBuffer) {
+ #ifdef OMX_ANDROID_COMPILE_AS_32BIT_ON_64BIT_PLATFORMS
+-                    // handle is only valid on 32-bit/mediaserver process
++                    // ANativeWindowBuffer is only valid on 32-bit/mediaserver process
+                     handle = NULL;
+ #else
+-                    handle = (native_handle_t *)nativeMeta.pHandle;
++                    handle = (native_handle_t *)nativeMeta.pBuffer->handle;
+ #endif
+                 }
+                 info->mData->meta()->setPointer("handle", handle);
+@@ -7176,14 +7177,8 @@
+ 
+     sp<IGraphicBufferProducer> bufferProducer;
+     if (err == OK) {
+-        mCodec->mInputMetadataType = kMetadataBufferTypeANWBuffer;
+         err = mCodec->mOMX->createInputSurface(
+-                mCodec->mNode, kPortIndexInput, dataSpace, &bufferProducer,
+-                &mCodec->mInputMetadataType);
+-        // framework uses ANW buffers internally instead of gralloc handles
+-        if (mCodec->mInputMetadataType == kMetadataBufferTypeGrallocSource) {
+-            mCodec->mInputMetadataType = kMetadataBufferTypeANWBuffer;
+-        }
++                mCodec->mNode, kPortIndexInput, dataSpace, &bufferProducer, &mCodec->mInputMetadataType);
+     }
+ 
+     if (err == OK) {
+@@ -7222,14 +7217,9 @@
+     notify->setMessage("output-format", mCodec->mOutputFormat);
+ 
+     if (err == OK) {
+-        mCodec->mInputMetadataType = kMetadataBufferTypeANWBuffer;
+         err = mCodec->mOMX->setInputSurface(
+                 mCodec->mNode, kPortIndexInput, surface->getBufferConsumer(),
+                 &mCodec->mInputMetadataType);
+-        // framework uses ANW buffers internally instead of gralloc handles
+-        if (mCodec->mInputMetadataType == kMetadataBufferTypeGrallocSource) {
+-            mCodec->mInputMetadataType = kMetadataBufferTypeANWBuffer;
+-        }
+     }
+ 
+     if (err == OK) {
+diff -urN a/frameworks/av/media/libstagefright/CameraSource.cpp b/frameworks/av/media/libstagefright/CameraSource.cpp
+--- a/frameworks/av/media/libstagefright/CameraSource.cpp	2016-11-03 11:22:35.200000000 +0000
++++ b/frameworks/av/media/libstagefright/CameraSource.cpp	2016-11-03 11:27:42.984000000 +0000
+@@ -1272,21 +1272,13 @@
+     mFrameAvailableCondition.signal();
+ }
+ 
+-MetadataBufferType CameraSource::metaDataStoredInVideoBuffers() const {
+-    ALOGV("metaDataStoredInVideoBuffers");
++bool CameraSource::isMetaDataStoredInVideoBuffers() const {
++    ALOGV("isMetaDataStoredInVideoBuffers");
+ 
+     // Output buffers will contain metadata if camera sends us buffer in metadata mode or via
+     // buffer queue.
+-    switch (mVideoBufferMode) {
+-#ifndef EXYNOS4_ENHANCEMENTS
+-        case hardware::ICamera::VIDEO_BUFFER_MODE_DATA_CALLBACK_METADATA:
+-            return kMetadataBufferTypeNativeHandleSource;
+-#endif
+-        case hardware::ICamera::VIDEO_BUFFER_MODE_BUFFER_QUEUE:
+-            return kMetadataBufferTypeANWBuffer;
+-        default:
+-            return kMetadataBufferTypeInvalid;
+-    }
++    return (mVideoBufferMode == hardware::ICamera::VIDEO_BUFFER_MODE_DATA_CALLBACK_METADATA ||
++            mVideoBufferMode == hardware::ICamera::VIDEO_BUFFER_MODE_BUFFER_QUEUE);
+ }
+ 
+ CameraSource::ProxyListener::ProxyListener(const sp<CameraSource>& source) {
+diff -urN a/frameworks/av/media/libstagefright/MediaCodecSource.cpp b/frameworks/av/media/libstagefright/MediaCodecSource.cpp
+--- a/frameworks/av/media/libstagefright/MediaCodecSource.cpp	2016-11-03 11:22:35.212000000 +0000
++++ b/frameworks/av/media/libstagefright/MediaCodecSource.cpp	2016-11-03 11:23:38.648000000 +0000
+@@ -466,6 +466,10 @@
+     mCodecLooper->setName("codec_looper");
+     mCodecLooper->start();
+ 
++    if (mFlags & FLAG_USE_METADATA_INPUT) {
++        mOutputFormat->setInt32("store-metadata-in-buffers", 1);
++    }
++
+     if (mFlags & FLAG_USE_SURFACE_INPUT) {
+         mOutputFormat->setInt32("create-input-buffers-suspended", 1);
+     }
+diff -urN a/frameworks/av/media/libstagefright/SurfaceMediaSource.cpp b/frameworks/av/media/libstagefright/SurfaceMediaSource.cpp
+--- a/frameworks/av/media/libstagefright/SurfaceMediaSource.cpp	2016-11-03 11:22:35.220000000 +0000
++++ b/frameworks/av/media/libstagefright/SurfaceMediaSource.cpp	2016-11-03 11:23:38.644000000 +0000
+@@ -23,7 +23,6 @@
+ #include <media/stagefright/MediaDefs.h>
+ #include <media/stagefright/MetaData.h>
+ #include <OMX_IVCommon.h>
+-#include <media/hardware/HardwareAPI.h>
+ #include <media/hardware/MetadataBufferType.h>
+ 
+ #include <ui/GraphicBuffer.h>
+@@ -127,9 +126,9 @@
+     return OK;
+ }
+ 
+-MetadataBufferType SurfaceMediaSource::metaDataStoredInVideoBuffers() const {
++bool SurfaceMediaSource::isMetaDataStoredInVideoBuffers() const {
+     ALOGV("isMetaDataStoredInVideoBuffers");
+-    return kMetadataBufferTypeANWBuffer;
++    return true;
+ }
+ 
+ int32_t SurfaceMediaSource::getFrameRate( ) const {
+@@ -251,19 +250,29 @@
+ }
+ 
+ // Pass the data to the MediaBuffer. Pass in only the metadata
++// The metadata passed consists of two parts:
++// 1. First, there is an integer indicating that it is a GRAlloc
++// source (kMetadataBufferTypeGrallocSource)
++// 2. This is followed by the buffer_handle_t that is a handle to the
++// GRalloc buffer. The encoder needs to interpret this GRalloc handle
++// and encode the frames.
++// --------------------------------------------------------------
++// |  kMetadataBufferTypeGrallocSource | sizeof(buffer_handle_t) |
++// --------------------------------------------------------------
+ // Note: Call only when you have the lock
+-void SurfaceMediaSource::passMetadataBuffer_l(MediaBuffer **buffer,
+-        ANativeWindowBuffer *bufferHandle) const {
+-    *buffer = new MediaBuffer(sizeof(VideoNativeMetadata));
+-    VideoNativeMetadata *data = (VideoNativeMetadata *)(*buffer)->data();
++static void passMetadataBuffer(MediaBuffer **buffer,
++        buffer_handle_t bufferHandle) {
++    *buffer = new MediaBuffer(4 + sizeof(buffer_handle_t));
++    char *data = (char *)(*buffer)->data();
+     if (data == NULL) {
+         ALOGE("Cannot allocate memory for metadata buffer!");
+         return;
+     }
+-    data->eType = metaDataStoredInVideoBuffers();
+-    data->pBuffer = bufferHandle;
+-    data->nFenceFd = -1;
+-    ALOGV("handle = %p, offset = %zu, length = %zu",
++    OMX_U32 type = kMetadataBufferTypeGrallocSource;
++    memcpy(data, &type, 4);
++    memcpy(data + 4, &bufferHandle, sizeof(buffer_handle_t));
++
++    ALOGV("handle = %p, , offset = %zu, length = %zu",
+             bufferHandle, (*buffer)->range_length(), (*buffer)->range_offset());
+ }
+ 
+@@ -352,7 +361,7 @@
+     mNumFramesEncoded++;
+     // Pass the data to the MediaBuffer. Pass in only the metadata
+ 
+-    passMetadataBuffer_l(buffer, mSlots[mCurrentSlot].mGraphicBuffer->getNativeBuffer());
++    passMetadataBuffer(buffer, mSlots[mCurrentSlot].mGraphicBuffer->handle);
+ 
+     (*buffer)->setObserver(this);
+     (*buffer)->add_ref();
+diff -urN a/frameworks/av/media/libstagefright/omx/OMXNodeInstance.cpp b/frameworks/av/media/libstagefright/omx/OMXNodeInstance.cpp
+--- a/frameworks/av/media/libstagefright/omx/OMXNodeInstance.cpp	2016-11-03 11:22:35.264000000 +0000
++++ b/frameworks/av/media/libstagefright/omx/OMXNodeInstance.cpp	2016-11-03 11:23:38.640000000 +0000
+@@ -540,9 +540,6 @@
+         OMX_U32 portIndex, OMX_BOOL enable, MetadataBufferType *type) {
+     if (portIndex != kPortIndexInput && portIndex != kPortIndexOutput) {
+         android_errorWriteLog(0x534e4554, "26324358");
+-        if (type != NULL) {
+-            *type = kMetadataBufferTypeInvalid;
+-        }
+         return BAD_VALUE;
+     }
+ 
+@@ -553,32 +550,26 @@
+     OMX_STRING nativeBufferName = const_cast<OMX_STRING>(
+             "OMX.google.android.index.storeANWBufferInMetadata");
+     MetadataBufferType negotiatedType;
+-    MetadataBufferType requestedType = type != NULL ? *type : kMetadataBufferTypeANWBuffer;
+ 
+     StoreMetaDataInBuffersParams params;
+     InitOMXParams(&params);
+     params.nPortIndex = portIndex;
+     params.bStoreMetaData = enable;
+ 
+-    OMX_ERRORTYPE err =
+-        requestedType == kMetadataBufferTypeANWBuffer
+-                ? OMX_GetExtensionIndex(mHandle, nativeBufferName, &index)
+-                : OMX_ErrorUnsupportedIndex;
++    OMX_ERRORTYPE err = OMX_GetExtensionIndex(mHandle, nativeBufferName, &index);
+     OMX_ERRORTYPE xerr = err;
+     if (err == OMX_ErrorNone) {
+         err = OMX_SetParameter(mHandle, index, &params);
+         if (err == OMX_ErrorNone) {
+             name = nativeBufferName; // set name for debugging
+-            negotiatedType = requestedType;
++            negotiatedType = kMetadataBufferTypeANWBuffer;
+         }
+     }
+     if (err != OMX_ErrorNone) {
+         err = OMX_GetExtensionIndex(mHandle, name, &index);
+         xerr = err;
+         if (err == OMX_ErrorNone) {
+-            negotiatedType =
+-                requestedType == kMetadataBufferTypeANWBuffer
+-                        ? kMetadataBufferTypeGrallocSource : requestedType;
++            negotiatedType = kMetadataBufferTypeGrallocSource;
+             err = OMX_SetParameter(mHandle, index, &params);
+         }
+     }
+@@ -600,9 +591,8 @@
+         }
+         mMetadataType[portIndex] = negotiatedType;
+     }
+-    CLOG_CONFIG(storeMetaDataInBuffers, "%s:%u %srequested %s:%d negotiated %s:%d",
+-            portString(portIndex), portIndex, enable ? "" : "UN",
+-            asString(requestedType), requestedType, asString(negotiatedType), negotiatedType);
++    CLOG_CONFIG(storeMetaDataInBuffers, "%s:%u negotiated %s:%d",
++            portString(portIndex), portIndex, asString(negotiatedType), negotiatedType);
+ 
+     if (type != NULL) {
+         *type = negotiatedType;
+@@ -958,9 +948,6 @@
+     }
+ 
+     // Input buffers will hold meta-data (ANativeWindowBuffer references).
+-    if (type != NULL) {
+-        *type = kMetadataBufferTypeANWBuffer;
+-    }
+     err = storeMetaDataInBuffers_l(portIndex, OMX_TRUE, type);
+     if (err != OK) {
+         return err;
+diff -urN a/frameworks/av/media/libstagefright/tests/Android.mk b/frameworks/av/media/libstagefright/tests/Android.mk
+--- a/frameworks/av/media/libstagefright/tests/Android.mk	2016-11-03 11:22:35.268000000 +0000
++++ b/frameworks/av/media/libstagefright/tests/Android.mk	2016-11-03 11:23:38.624000000 +0000
+@@ -30,7 +30,6 @@
+ 	frameworks/av/media/libstagefright \
+ 	frameworks/av/media/libstagefright/include \
+ 	$(TOP)/frameworks/native/include/media/openmax \
+-	$(TOP)/frameworks/native/include/media/hardware \
+ 
+ LOCAL_CFLAGS += -Werror -Wall
+ LOCAL_CLANG := true
+diff -urN a/frameworks/av/media/libstagefright/wifi-display/Android.mk b/frameworks/av/media/libstagefright/wifi-display/Android.mk
+--- a/frameworks/av/media/libstagefright/wifi-display/Android.mk	2016-11-03 11:22:35.272000000 +0000
++++ b/frameworks/av/media/libstagefright/wifi-display/Android.mk	2016-11-03 11:23:38.624000000 +0000
+@@ -17,7 +17,6 @@
+ LOCAL_C_INCLUDES:= \
+         $(TOP)/frameworks/av/media/libstagefright \
+         $(TOP)/frameworks/native/include/media/openmax \
+-        $(TOP)/frameworks/native/include/media/hardware \
+         $(TOP)/frameworks/av/media/libstagefright/mpeg2ts \
+ 
+ LOCAL_SHARED_LIBRARIES:= \
+diff -urN a/frameworks/av/media/libstagefright/wifi-display/source/PlaybackSession.cpp b/frameworks/av/media/libstagefright/wifi-display/source/PlaybackSession.cpp
+--- a/frameworks/av/media/libstagefright/wifi-display/source/PlaybackSession.cpp	2016-11-03 11:22:35.272000000 +0000
++++ b/frameworks/av/media/libstagefright/wifi-display/source/PlaybackSession.cpp	2016-11-03 11:23:38.624000000 +0000
+@@ -948,9 +948,8 @@
+ 
+     if (isVideo) {
+         format->setString("mime", MEDIA_MIMETYPE_VIDEO_AVC);
+-        format->setInt32(
+-                "android._input-metadata-buffer-type", kMetadataBufferTypeANWBuffer);
+-        format->setInt32("android._store-metadata-in-buffers-output", (mHDCP != NULL)
++        format->setInt32("store-metadata-in-buffers", true);
++        format->setInt32("store-metadata-in-buffers-output", (mHDCP != NULL)
+                 && (mHDCP->getCaps() & HDCPModule::HDCP_CAPS_ENCRYPT_NATIVE));
+         format->setInt32(
+                 "color-format", OMX_COLOR_FormatAndroidOpaque);
+diff -urN a/frameworks/av/media/mediaserver/main_mediaserver.cpp b/frameworks/av/media/mediaserver/main_mediaserver.cpp
+--- a/frameworks/av/media/mediaserver/main_mediaserver.cpp	2016-11-03 11:22:35.272000000 +0000
++++ b/frameworks/av/media/mediaserver/main_mediaserver.cpp	2016-11-03 11:28:19.080000000 +0000
+@@ -28,6 +28,7 @@
+ #include "IcuUtils.h"
+ #include "MediaPlayerService.h"
+ #include "ResourceManagerService.h"
++#include "CameraService.h"
+ 
+ using namespace android;
+ 
+@@ -41,6 +42,7 @@
+     InitializeIcuOrDie();
+     MediaPlayerService::instantiate();
+     ResourceManagerService::instantiate();
++    CameraService::instantiate();
+     registerExtensions();
+     ProcessState::self()->startThreadPool();
+     IPCThreadState::self()->joinThreadPool();
+diff -urN a/frameworks/av/services/camera/libcameraservice/CameraService.cpp b/frameworks/av/services/camera/libcameraservice/CameraService.cpp
+--- a/frameworks/av/services/camera/libcameraservice/CameraService.cpp	2016-11-03 11:22:35.352000000 +0000
++++ b/frameworks/av/services/camera/libcameraservice/CameraService.cpp	2016-11-03 11:29:24.780000000 +0000
+@@ -831,7 +831,7 @@
+ Status CameraService::initializeShimMetadata(int cameraId) {
+     int uid = getCallingUid();
+ 
+-    String16 internalPackageName("cameraserver");
++    String16 internalPackageName("media");
+     String8 id = String8::format("%d", cameraId);
+     Status ret = Status::ok();
+     sp<Client> tmp = nullptr;             	
+                                               	             
