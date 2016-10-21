@@ -1769,3 +1769,24 @@ diff -ur a/frameworks/av/media/libstagefright/MediaBufferGroup.cpp b/frameworks/
 -}
 +}
 \ No newline at end of file
+diff --git a/packages/apps/Settings/src/com/android/settings/ButtonSettings.java b/packages/apps/Settings/src/com/android/settings/ButtonSettings.java
+--- a/packages/apps/Settings/src/com/android/settings/ButtonSettings.java
++++ b/packages/apps/Settings/src/com/android/settings/ButtonSettings.java
+@@ -223,7 +223,6 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
+         // Only visible on devices that does not have a navigation bar already,
+         // and don't even try unless the existing keys can be disabled
+         boolean needsNavigationBar = false;
+-        if (hardware.isSupported(CMHardwareManager.FEATURE_KEY_DISABLE)) {
+             try {
+                 IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+                 needsNavigationBar = wm.needsNavigationBar();
+@@ -238,9 +237,6 @@ public class ButtonSettings extends SettingsPreferenceFragment implements
+                 mNavigationPreferencesCat.setEnabled(mDisableNavigationKeys.isChecked());
+                 updateDisableNavkeysCategories(mDisableNavigationKeys.isChecked());
+             }
+-        } else {
+-            prefScreen.removePreference(mDisableNavigationKeys);
+-        }
+ 
+         if (hasPowerKey) {
+             if (!Utils.isVoiceCapable(getActivity())) {
