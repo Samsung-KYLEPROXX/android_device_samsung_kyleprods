@@ -919,33 +919,3 @@ diff -ur a/packages/apps/Dialer/src/com/android/dialer/DialtactsActivity.java b/
      /**
       * @return True if the search UI was exited, false otherwise
       */
-diff -ur a/external/tinyalsa/include/tinyalsa/asoundlib.h b/external/tinyalsa/include/tinyalsa/asoundlib.h
---- a/external/tinyalsa/include/tinyalsa/asoundlib.h	2016-05-25 10:22:29.888000000 +0000
-+++ b/external/tinyalsa/include/tinyalsa/asoundlib.h	2016-05-25 10:23:03.756000000 +0000
-@@ -237,6 +237,7 @@
- int pcm_prepare(struct pcm *pcm);
- /* Start and stop a PCM channel that doesn't transfer data */
- int pcm_start(struct pcm *pcm);
-+int pcm_drain(struct pcm *pcm);
- int pcm_stop(struct pcm *pcm);
- 
- /* ioctl function for PCM driver */
-diff -ur a/external/tinyalsa/pcm.c b/external/tinyalsa/pcm.c
---- a/external/tinyalsa/pcm.c	2016-05-25 10:22:29.888000000 +0000
-+++ b/external/tinyalsa/pcm.c	2016-05-25 10:23:03.756000000 +0000
-@@ -1027,6 +1027,14 @@
-     return 0;
- }
- 
-+int pcm_drain(struct pcm *pcm)
-+{
-+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DRAIN) < 0)
-+        return oops(pcm, errno, "drain failed");
-+
-+    return 0;
-+}
-+
- int pcm_stop(struct pcm *pcm)
- {
-     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DROP) < 0)
-
