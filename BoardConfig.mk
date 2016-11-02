@@ -178,7 +178,6 @@ BOARD_HARDWARE_CLASS                        := hardware/samsung/cmhw/
 
 # GPS
 TARGET_SPECIFIC_HEADER_PATH                 := device/samsung/kyleprods/include
-BOARD_GLOBAL_CFLAGS                         += -DCOMPAT_SENSORS_M
 
 
 # SELinux
