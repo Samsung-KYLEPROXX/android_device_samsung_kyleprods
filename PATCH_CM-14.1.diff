@@ -951,59 +951,6 @@ diff -ur a/frameworks/av/services/audioflinger/Threads.cpp b/frameworks/av/servi
          // Use this to track timestamp information
          // ALOGD("%s", mTimestamp.toString().c_str());
 
-diff -ur a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java
---- a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java	2016-11-02 16:47:21.404000000 +0000
-+++ b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiNative.java	2016-11-02 16:48:21.792000000 +0000
-@@ -1547,6 +1547,7 @@
-             return "*** failed to read kernel log ***";
-         }
-     }
-+    public native static boolean setMode(int mode);
- 
-     /* WIFI HAL support */
- 
-diff -ur a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java
---- a/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java	2016-11-02 16:47:21.416000000 +0000
-+++ b/frameworks/opt/net/wifi/service/java/com/android/server/wifi/WifiStateMachine.java	2016-11-02 16:48:21.776000000 +0000
-@@ -1788,6 +1788,7 @@
-      */
-     public void setSupplicantRunning(boolean enable) {
-         if (enable) {
-+            WifiNative.setMode(0);
-             sendMessage(CMD_START_SUPPLICANT);
-         } else {
-             mDisconnectDelayDuration = -1;
-@@ -1815,6 +1816,7 @@
-      */
-     public void setHostApRunning(WifiConfiguration wifiConfig, boolean enable) {
-         if (enable) {
-+            WifiNative.setMode(1);
-             sendMessage(CMD_START_AP, wifiConfig);
-         } else {
-             sendMessage(CMD_STOP_AP);
-diff -ur a/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp b/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp
---- a/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp	2016-11-02 16:47:21.448000000 +0000
-+++ b/frameworks/opt/net/wifi/service/jni/com_android_server_wifi_WifiNative.cpp	2016-11-02 16:48:21.732000000 +0000
-@@ -136,6 +136,11 @@
-     return env->NewString((const jchar *)str.string(), str.size());
- }
- 
-+static jboolean android_net_wifi_setMode(JNIEnv* env, jobject, jint type)
-+{
-+    return (jboolean)(::wifi_set_mode(type) == 0);
-+}
-+
- static jboolean android_net_wifi_isDriverLoaded(JNIEnv* env, jclass)
- {
-     return (::is_wifi_driver_loaded() == 1);
-@@ -2605,6 +2610,7 @@
-     { "doIntCommandNative", "(Ljava/lang/String;)I", (void*)android_net_wifi_doIntCommand },
-     { "doStringCommandNative", "(Ljava/lang/String;)Ljava/lang/String;",
-             (void*) android_net_wifi_doStringCommand },
-+    { "setMode", "(I)Z", (void*) android_net_wifi_setMode},
-     { "startHalNative", "()Z", (void*) android_net_wifi_startHal },
-     { "stopHalNative", "()V", (void*) android_net_wifi_stopHal },
-     { "waitForHalEventNative", "()V", (void*) android_net_wifi_waitForHalEvents },
 diff -ur a/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java b/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java
 --- a/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java	2016-11-03 04:41:44.908000000 +0000
 +++ b/packages/apps/CMParts/src/org/cyanogenmod/cmparts/input/ButtonSettings.java	2016-11-03 04:44:14.452000000 +0000
