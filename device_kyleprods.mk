@@ -20,7 +20,8 @@ PRODUCT_COPY_FILES += \
 
 # Configs
 PRODUCT_COPY_FILES += \
-    device/samsung/kyleprods/configs/media_codecs.xml:system/etc/media_codecs.xml
+    device/samsung/kyleprods/configs/media_codecs.xml:system/etc/media_codecs.xml \
+    device/samsung/kyleprods/configs/98netflix:system/etc/init.d/98netflix
 
 ifeq ($(TARGET_BUILD_VARIANT),user)
     # Secure ADB
@@ -38,16 +39,7 @@ endif
 PRODUCT_PACKAGES += \
     make_ext4fs \
     e2fsck \
-    setup_fs \
-    mkfs.f2fs \
-    fsck.f2fs \
-    fibmap.f2fs
-
-# CyanogenMod has removed CMAccount but not
-# fix the SetupWizard to working without it
-# http://review.cyanogenmod.org/#/c/131177/
-PRODUCT_PACKAGES += \
-    CMAccount
+    setup_fs
 
 # USB accessory
 PRODUCT_PACKAGES += \
