@@ -41,6 +41,14 @@ PRODUCT_PACKAGES += \
     e2fsck \
     setup_fs
 
+# F2FS tools
+ifeq ($(BUILD_TWRP), true)
+PRODUCT_PACKAGES += \
+    mkfs.f2fs \
+    fsck.f2fs \
+    fibmap.f2fs
+endif
+
 # USB accessory
 PRODUCT_PACKAGES += \
     com.android.future.usb.accessory
