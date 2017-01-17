@@ -38,10 +38,7 @@ endif
 PRODUCT_PACKAGES += \
     make_ext4fs \
     e2fsck \
-    setup_fs \
-    mkfs.f2fs \
-    fsck.f2fs \
-    fibmap.f2fs
+    setup_fs
 
 # CyanogenMod has removed CMAccount but not
 # fix the SetupWizard to working without it
