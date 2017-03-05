@@ -11,7 +11,6 @@ DEVICE_PACKAGE_OVERLAYS += device/samsung/kyleprods/overlay
 # Init files
 PRODUCT_COPY_FILES += \
     device/samsung/kyleprods/rootdir/fstab.hawaii_ss_kyleprods:root/fstab.hawaii_ss_kyleprods \
-    device/samsung/kyleprods/rootdir/init.rc:root/init.rc \
     device/samsung/kyleprods/rootdir/init.hawaii_ss_kyleprods.rc:root/init.hawaii_ss_kyleprods.rc \
     device/samsung/kyleprods/rootdir/init.bcm2166x.usb.rc:root/init.bcm2166x.usb.rc \
     device/samsung/kyleprods/rootdir/init.log.rc:root/init.log.rc \
