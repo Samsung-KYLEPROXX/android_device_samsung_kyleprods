@@ -28,11 +28,7 @@ BOARD_KERNEL_PAGESIZE                       := 4096
 BOARD_KERNEL_OFFSET                         := 0x00008000
 BOARD_RAMDISK_OFFSET                        := 0x01000000
 BOARD_KERNEL_TAGS_OFFSET                    := 0x00000100
-ifeq ($(BUILD_TWRP),true)
-    TARGET_KERNEL_CONFIG                    := bcm21664_hawaii_ss_kyleproxx_rev00_recovery_defconfig
-else
-    TARGET_KERNEL_CONFIG                    := bcm21664_hawaii_ss_kyleprods_rev00_cyanogenmod_defconfig
-endif
+TARGET_KERNEL_CONFIG                        := bcm21664_hawaii_ss_kyleproxx_rev00_recovery_defconfig
 TARGET_KERNEL_SOURCE                        := kernel/samsung/kyleproxx
 TARGET_KERNEL_CUSTOM_TOOLCHAIN              := arm-eabi-4.7
 
@@ -120,11 +116,7 @@ BOARD_RIL_CLASS                             := ../../../device/samsung/kyleprods
 
 # Recovery
 # Compile with BUILD_TWRP=true when build TWRP recovery
-ifeq ($(BUILD_TWRP),true)
-    TARGET_RECOVERY_FSTAB                   := device/samsung/kyleprods/rootdir/twrp.fstab.hawaii_ss_kyleprods
-else
-    TARGET_RECOVERY_FSTAB                   := device/samsung/kyleprods/rootdir/fstab.hawaii_ss_kyleprods
-endif
+TARGET_RECOVERY_FSTAB                       := device/samsung/kyleprods/rootdir/twrp.fstab.hawaii_ss_kyleprods
 TARGET_USE_CUSTOM_LUN_FILE_PATH             := /sys/class/android_usb/android0/f_mass_storage/lun/file
 BOARD_HAS_NO_SELECT_BUTTON                  := true
 BOARD_HAS_LARGE_FILESYSTEM                  := true

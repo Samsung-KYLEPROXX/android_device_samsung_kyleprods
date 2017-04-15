@@ -1,6 +1,6 @@
 /boot           emmc    /dev/block/platform/sdhci.1/by-name/KERNEL
 /system         ext4    /dev/block/platform/sdhci.1/by-name/system
-/data           ext4    /dev/block/platform/sdhci.1/by-name/userdata                        length=-16384
+/data           ext4    /dev/block/platform/sdhci.1/by-name/userdata                        
 /cache          ext4    /dev/block/platform/sdhci.1/by-name/CSC
 /recovery       emmc    /dev/block/platform/sdhci.1/by-name/RECOVERY
 /modem          emmc    /dev/block/platform/sdhci.1/by-name/modem                           flags=display="Baseband";backup=1
